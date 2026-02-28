@@ -1,0 +1,61 @@
+############################
+# OS / Editor
+############################
+.DS_Store
+Thumbs.db
+
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+.idea
+*.swp
+*.swo
+
+############################
+# Node / Package Manager
+############################
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+############################
+# Environment variables
+############################
+.env
+.env.*
+!.env.example
+
+############################
+# SST
+############################
+.sst/
+.sst-logs/
+sst-env.d.ts
+
+############################
+# AWS / Infrastructure
+############################
+cdk.out/
+.aws/
+.aws-sam/
+samconfig.toml
+
+############################
+# Lambda build artifacts
+############################
+packages/functions/dist/
+packages/functions/.cache/
+
+############################
+# Coverage / Test
+############################
+coverage/
+.nyc_output/
+
+############################
+# Misc
+############################
+*.log
+*.tmp

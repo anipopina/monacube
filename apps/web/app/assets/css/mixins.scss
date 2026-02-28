@@ -1,0 +1,18 @@
+// utility mixins
+/* usage
+@use '@/assets/css/mixins' as mixins;
+@include mixins.responsive-hover {
+  // hover styles
+};
+*/
+
+@mixin responsive-hover {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      @content;
+    }
+  }
+  &:active {
+    @content;
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "template-nuxt-sst",
+  "version": "1.0.0",
+  "description": "Template for Nuxt SPA deployed with SST (AWS serverless)",
+  "private": true,
+  "scripts": {
+    "webdev": "npm --prefix apps/web run dev",
+    "webbuild": "npm --prefix apps/web run build",
+    "sstdev": "concurrently -n SST,WEB \"sst dev --stage dev\" \"npm --prefix apps/web run dev\"",
+    "deploy:dev": "sst deploy --stage dev",
+    "deploy:prod": "sst deploy --stage production"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "concurrently": "^9.2.1",
+    "eslint": "^9.39.2",
+    "jiti": "^2.6.1",
+    "prettier": "^3.7.4",
+    "sst": "^4.1.3",
+    "typescript-eslint": "^8.50.0"
+  }
+}

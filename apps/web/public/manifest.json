@@ -1,0 +1,14 @@
+{
+  "name": "CHANGEME: Application Name",
+  "short_name": "CHANGEME: AppName",
+  "background_color": "#0b1020",
+  "theme_color": "#6b8e23",
+  "description": "CHANGEME: Application Description",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

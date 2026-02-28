@@ -1,0 +1,204 @@
+// Modal common styles
+/* usage
+@use '@/assets/css/modal' as modal;
+@include modal.styles;
+*/
+
+@mixin styles {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p {
+    margin: 0; // 間隔はflex+gapで制御
+  }
+
+  .lcm-modal {
+    width: min(520px, 92vw);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 0;
+    background: var(--color-surface);
+    color: var(--color-fg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    opacity: 0; // animation start
+    transform: scale(0.95); // animation start
+    transition:
+      opacity var(--duration-normal) ease-out,
+      transform var(--duration-normal) ease-out;
+
+    &::backdrop {
+      background: rgb(0 0 0 / 0%); // animation start
+      backdrop-filter: blur(0px); // animation start
+      transition:
+        background-color var(--duration-normal) ease-out,
+        backdrop-filter var(--duration-normal) ease-out;
+    }
+
+    &--open {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    &--open::backdrop {
+      background: rgb(0 0 0 / 40%);
+      backdrop-filter: blur(2px);
+    }
+  }
+
+  .lcm-panel {
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .lcm-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+
+  .lcm-panel-title {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .lcm-panel-content {
+    position: relative;
+    padding: 0 var(--space-2) var(--space-2);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .lcm-section {
+    position: relative;
+    background: var(--color-surface2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4) var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .lcm-section-title {
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .lcm-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .lcm-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+  }
+
+  .lcm-subtext {
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+  }
+
+  .lcm-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .lcm-actions-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .lcm-actions-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .lcm-status {
+    font-size: var(--font-size-sm);
+    word-break: break-word;
+  }
+
+  .lcm-error {
+    color: var(--color-danger);
+    font-size: var(--font-size-sm);
+    word-break: break-word;
+  }
+
+  .lcm-footer-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .lcm-close {
+    position: absolute;
+    top: var(--space-4);
+    right: var(--space-4);
+  }
+
+  .lcm-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgb(from var(--color-bg) r g b / 50%);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-lg);
+    color: rgb(from var(--color-fg) r g b / 50%);
+    border-radius: inherit;
+  }
+
+  // Vue transition styles
+  .lcm-parent2child {
+    &-enter-active,
+    &-leave-active {
+      transition:
+        opacity var(--duration-fast) ease-out,
+        transform var(--duration-fast) ease-out;
+    }
+    &-enter-from {
+      opacity: 0;
+      transform: translateX(10px);
+    }
+    &-leave-to {
+      opacity: 0;
+      transform: translateX(-10px);
+    }
+  }
+
+  .lcm-child2parent {
+    &-enter-active,
+    &-leave-active {
+      transition:
+        opacity var(--duration-fast) ease-out,
+        transform var(--duration-fast) ease-out;
+    }
+    &-enter-from {
+      opacity: 0;
+      transform: translateX(-10px);
+    }
+    &-leave-to {
+      opacity: 0;
+      transform: translateX(10px);
+    }
+  }
+}

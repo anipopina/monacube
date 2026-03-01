@@ -3,11 +3,11 @@
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const APP_NAME = 'App Name' // CHANGEME
-const APP_DESCRIPTION = 'App Description' // CHANGEME
-const THEME_COLOR = '#6b8e23' // CHANGEME
-const HOSTNAME = 'appname.komikikaku.com' // CHANGEME
-const DEV_HOSTNAME = 'appname-dev.komikikaku.com' // CHANGEME
+const APP_NAME = 'MonaCube'
+const APP_DESCRIPTION = 'An illustration platform built for a fair and sustainable creative community, powered by Monacoin.'
+const THEME_COLOR = '#1A1A1A'
+const HOSTNAME = 'monacube.com' // OGP用なのでrootを書いておく
+const DEV_HOSTNAME = 'gallery-dev.monacube.com'
 
 const WEB_DIR = fileURLToPath(new URL('.', import.meta.url))
 const ROOT_DIR = resolve(WEB_DIR, '../..')
@@ -82,7 +82,7 @@ export default defineNuxtConfig({
       apiBase: process.env.NUXT_PUBLIC_API_BASE || '/api', // run dev 時は localhost/api に向くようにする
       stage: process.env.NUXT_PUBLIC_STAGE || 'dev',
       webAuthnRpName: process.env.NUXT_PUBLIC_WEBAUTHN_RPNAME || APP_NAME,
-      webAuthnUserName: process.env.NUXT_PUBLIC_WEBAUTHN_USERNAME || 'Monar', // CHANGEME: そのままでもOK
+      webAuthnUserName: process.env.NUXT_PUBLIC_WEBAUTHN_USERNAME || 'Monar',
     },
   },
   nitro: {

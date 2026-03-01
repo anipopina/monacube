@@ -6,7 +6,7 @@ export default $config({
   app(input) {
     const stage = assertStage(input?.stage ?? 'dev')
     return {
-      name: 'appname', // CHANGEME: AWSのリソース名などに使われる
+      name: 'monacube', // AWSのリソース名などに使われる
       home: 'aws',
       stage,
       removal: stage === 'production' ? 'retain' : 'remove',
@@ -40,7 +40,7 @@ export default $config({
 
     // Lambdaで使う通常の環境変数
     const functionEnv = {
-      APP_NAME: 'App Name', // CHANGEME
+      APP_NAME: 'MonaCube',
       STAGE: stage,
       WEB_ORIGIN: `https://${webDomain}`,
       JWT_ISSUER: `https://${apiDomain}`,
@@ -101,8 +101,8 @@ function assertStage(stage: string): Stage {
 }
 
 function domains(stage: Stage) {
-  const root = 'komikikaku.com' // CHANGEME: root part of hostname
-  const app = 'appname' // CHANGEME: appname part of hostname
+  const root = 'monacube.com' // root part of hostname
+  const app = 'gallery' // appname part of hostname
 
   switch (stage) {
     case 'production':

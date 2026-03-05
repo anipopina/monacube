@@ -44,8 +44,17 @@
     }
 
     &--open::backdrop {
-      background: rgb(0 0 0 / 40%);
+      background: rgb(0 0 0 / 80%);
       backdrop-filter: blur(2px);
+    }
+  }
+
+  // light mode adjustments
+  [data-color-mode='light'] {
+    .lcm-modal {
+      &--open::backdrop {
+        background: rgb(0 0 0 / 40%);
+      }
     }
   }
 

@@ -1,21 +1,23 @@
 <template>
-  <div :class="['lc-coloredaddr', { 'lc-coloredaddr--clickable': clickable }]">
-    <span :style="{ color: colors[0] }">{{ address.charAt(0) }}</span
-    ><span :style="{ color: colors[1] }">{{ address.charAt(1) }}</span
-    ><span :style="{ color: colors[2] }">{{ address.charAt(2) }}</span
-    ><span :style="{ color: colors[3] }">{{ address.charAt(3) }}</span
-    ><span :style="{ color: colors[4] }">{{ address.charAt(4) }}</span
-    ><span :style="{ color: colors[5] }">{{ address.charAt(5) }}</span>
+  <div
+    :class="['lc-coloredaddr', { 'lc-coloredaddr--clickable': clickable }]"
+    :style="{ width: `${size}px`, height: `${size}px`, borderRadius: `${radius}px` }"
+  >
+    <span v-for="(color, i) in colors" :key="i" :style="{ backgroundColor: color }" />
   </div>
 </template>
 
 <script setup lang="ts">
 type Props = {
   address: string
+  size?: number
+  radius?: number
   clickable?: boolean
 }
 const props = withDefaults(defineProps<Props>(), {
   address: 'MMMMMM',
+  size: 32,
+  radius: 3.2,
   clickable: false,
 })
 
@@ -35,8 +37,8 @@ const colorFrom = (seed: string) => {
   const r1 = mod(h >>> 0, 1000) / 1000
   const r2 = mod((h * 1103515245 + 12345) >>> 0, 1000) / 1000
 
-  const sat = Math.round(65 + r1 * 30) // 65..95
-  const light = Math.round(60 + r2 * 20) // 60..80
+  const sat = Math.round(60 + r1 * 30) // 60..90
+  const light = Math.round(30 + r2 * 30) // 30..60
 
   return `hsl(${hue} ${sat}% ${light}%)`
 }
@@ -49,6 +51,8 @@ const colors = [
   colorFrom(addr.slice(6, 8)),
   colorFrom(addr.slice(8, 10)),
   colorFrom(addr.slice(10, 12)),
+  colorFrom(addr.slice(12, 14)),
+  colorFrom(addr.slice(14, 16)),
 ]
 </script>
 
@@ -56,12 +60,15 @@ const colors = [
 @use '@/assets/css/mixins' as mixins;
 
 .lc-coloredaddr {
-  display: inline-block;
-  padding: 0 6px;
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
-  line-height: var(--line-height-normal);
-  text-shadow: 0 0 1px rgb(0 0 0 / 100%);
+  display: inline-flex;
+  overflow: hidden;
+  flex-shrink: 0;
+  vertical-align: middle;
+
+  span {
+    flex: 1;
+    height: 100%;
+  }
 
   &--clickable {
     cursor: pointer;
@@ -81,7 +88,6 @@ const colors = [
 // light mode adjustments
 [data-color-mode='light'] {
   .lc-coloredaddr {
-    text-shadow: 0 0 1px rgb(255 255 255 / 100%);
     filter: contrast(50%) saturate(300%);
     &--clickable {
       @include mixins.responsive-hover {

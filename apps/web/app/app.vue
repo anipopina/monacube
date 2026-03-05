@@ -1,11 +1,15 @@
 <template>
+  <NuxtLoadingIndicator color="linear-gradient(90deg, #53989cff, #53989c44)" :height="4" />
   <UiHeader>
     <template #logo>
-      <h1 class="gc-span-nized"><NuxtLink to="/">AppName</NuxtLink></h1>
+      <h1 class="gc-span-nized"><NuxtLink to="/">MonaCube</NuxtLink></h1>
     </template>
 
     <template #nav>
       <NuxtLink to="/items/__ID__" class="gc-only-desktop">Items</NuxtLink>
+      <NuxtLink to="/works/__WORK_ID__" class="gc-only-desktop">WorkItem</NuxtLink>
+      <NuxtLink to="/users/M8KAtuA3xWGLhsjim81uPv1uBQMyatJMW5" class="gc-only-desktop">User1</NuxtLink>
+      <NuxtLink to="/users/MET11NjMLWS6qrf6bV4gscWW2B1WSV4QVp" class="gc-only-desktop">User2</NuxtLink>
       <NuxtLink to="/about" class="gc-only-desktop">About</NuxtLink>
       <NuxtLink to="/settings" class="gc-only-desktop">
         <Settings class="gc-icon" aria-label="Settings" />
@@ -13,7 +17,9 @@
     </template>
 
     <template #actions>
-      <span v-if="user"><UiColoredAddr :address="user?.address || ''" clickable @click="openWalletModal" /></span>
+      <span v-if="user"
+        ><UiColoredAddrIcon :address="user?.address || ''" :size="36" :radius="3" clickable @click="$router.push('/me')"
+      /></span>
       <UiButton v-if="!user" @click="managedLogin" :disabled="isLoading" variant="primary" :iconRight="KeyRound">Login</UiButton>
 
       <UiHamburger class="gc-only-mobile">
@@ -38,10 +44,9 @@
 <script setup lang="ts">
 import { LogOut, KeyRound, Settings } from 'lucide-vue-next'
 import { PrfNotSupportedError } from '@/lib/passkey'
-import { managedCreatePasskeyKey, managedLoginKey, managedLogoutKey, managedLockWalletKey } from '@/lib/injectionKeys'
+import { managedCreatePasskeyKey, managedLoginKey, managedLogoutKey, managedLockWalletKey, openWalletModalKey } from '@/lib/injectionKeys'
 
 useColorMode()
-const { confirm } = useConfirm()
 const { user, isLoading, createPasskey, login, logout, lockWallet } = useWalletAuth()
 const walletModalRef = ref<{ openModal: () => Promise<void> } | null>(null)
 
@@ -59,26 +64,24 @@ const managedCreatePasskey = async () => {
   }
 }
 
-const managedLogin = async ({ ignoreAddressMismatch = false } = {}) => {
+const managedLogin = async () => {
   toast.loading('ログイン中', isLoading)
   try {
-    await login({ ignoreAddressMismatch })
+    await login()
     toast.success(`${user.value?.address || ''} でログインしました`)
   } catch (error) {
     if (error instanceof PrfNotSupportedError) {
-      toast.error('お使いのブラウザ/デバイスは本サービスに必要な WebAuthn PRF をサポートしていません。別の環境でお試しください')
+      toast.error('お使いのブラウザ/デバイスは本サービスに必要な WebAuthn PRF をサポートしていません。別の環境でお試しください', 10_000)
       return
     } else if (error instanceof AddressMismatchError) {
-      if (await confirm('前回とは異なるウォレットでログインしようとしています。ウォレットを切り替えますか？')) {
-        managedLogin({ ignoreAddressMismatch: true }) // オプション付きで再試行
-        return
-      } else {
-        managedLogout()
-        return
-      }
+      toast.error(
+        'ログイン中のアカウントとは異なるウォレットを開こうとしたため、セッションをリセットしました。もう一度ログインしてください',
+        10_000,
+      )
+      return
     } else {
       console.error('Login failed:', error)
-      toast.error(`ログインに失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      toast.error(`ログインに失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}`, 10_000)
     }
   }
 }
@@ -97,4 +100,5 @@ provide(managedCreatePasskeyKey, managedCreatePasskey)
 provide(managedLoginKey, managedLogin)
 provide(managedLogoutKey, managedLogout)
 provide(managedLockWalletKey, managedLockWallet)
+provide(openWalletModalKey, openWalletModal)
 </script>

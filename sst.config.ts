@@ -16,7 +16,7 @@ export default $config({
 
   async run() {
     const stage = assertStage($app.stage)
-    const { web: webDomain, api: apiDomain } = domains(stage)
+    const { web: webDomain, api: apiDomain, img: imgDomain } = domains(stage)
 
     // Database: Single DynamoDB Table
     const appTable = new sst.aws.Dynamo('AppTable', {
@@ -25,15 +25,26 @@ export default $config({
       ttl: 'ttl',
     })
 
-    // API: API Gateway
-    const api = new sst.aws.ApiGatewayV2('Api', {
-      domain: { name: apiDomain },
+    // Image hosting: S3 + CloudFront
+    const imageBucket = new sst.aws.Bucket('ImageBucket', {
+      access: 'cloudfront',
       cors: {
         allowOrigins: [`https://${webDomain}`],
-        allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowHeaders: ['authorization', 'content-type'],
+        allowMethods: ['GET', 'HEAD', 'PUT'],
+        allowHeaders: ['*'],
       },
     })
+
+    const imageCdn = new sst.aws.Router('ImageCdn', {
+      domain: { name: imgDomain },
+      routes: {
+        '/*': {
+          bucket: imageBucket,
+        },
+      },
+    })
+
+    // ========= API (API Gateway + Lambda) =========
 
     // Lambdaで使う秘密の値を宣言  値は `sst secret` で管理する
     const JWT_SECRET = new sst.Secret('JWT_SECRET') // 32byte以上のランダム文字列
@@ -43,33 +54,43 @@ export default $config({
       APP_NAME: 'MonaCube',
       STAGE: stage,
       WEB_ORIGIN: `https://${webDomain}`,
+      IMG_ORIGIN: `https://${imgDomain}`,
       JWT_ISSUER: `https://${apiDomain}`,
       JWT_AUDIENCE: `https://${webDomain}`,
       APP_TABLE: appTable.name,
+      IMG_BUCKET: imageBucket.name,
     }
 
-    api.route('GET /health', {
-      handler: 'packages/functions/src/health.handler',
-      environment: functionEnv,
+    // API: API Gateway
+    const api = new sst.aws.ApiGatewayV2('Api', {
+      domain: { name: apiDomain },
+      cors: {
+        allowOrigins: [`https://${webDomain}`],
+        allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowHeaders: ['authorization', 'content-type'],
+      },
+      transform: {
+        route: {
+          handler: (args) => {
+            args.link ??= [appTable, JWT_SECRET, imageBucket]
+            args.environment ??= functionEnv
+            args.memory ??= '1024 MB'
+          },
+        },
+      },
     })
 
-    api.route('POST /auth/challenge', {
-      handler: 'packages/functions/src/auth/challenge.handler',
-      link: [appTable],
-      environment: functionEnv,
-    })
-
-    api.route('POST /auth/verify', {
-      handler: 'packages/functions/src/auth/verify.handler',
-      link: [appTable, JWT_SECRET],
-      environment: functionEnv,
-    })
-
-    api.route('POST /privateApiSample', {
-      handler: 'packages/functions/src/privateApiSample.handler',
-      link: [JWT_SECRET],
-      environment: functionEnv,
-    })
+    api.route('GET /health', 'packages/functions/src/health.handler')
+    api.route('POST /auth/challenge', 'packages/functions/src/auth_challenge.handler')
+    api.route('POST /auth/verify', 'packages/functions/src/auth_verify.handler')
+    // api.route('GET /works', 'packages/functions/src/works.handler')
+    // api.route('GET /works/{workId}', 'packages/functions/src/works_item.get')
+    // api.route('DELETE /works/{workId}', 'packages/functions/src/works_item.delete')
+    api.route('POST /works/uploads/init', 'packages/functions/src/works_uploads_init.handler')
+    api.route('POST /works/uploads/finalize', 'packages/functions/src/works_uploads_finalize.handler')
+    // api.route('POST /me/icon/uploads/init', 'packages/functions/src/me_icon_uploads_init.handler')
+    // api.route('POST /me/icon/uploads/finalize', 'packages/functions/src/me_icon_uploads_finalize.handler')
+    api.route('POST /privateApiSample', 'packages/functions/src/privateApiSample.handler')
 
     // ========= Frontend (Nuxt SPA Static) =========
     const web = new sst.aws.StaticSite('Web', {
@@ -81,6 +102,7 @@ export default $config({
       domain: { name: webDomain },
       environment: {
         NUXT_PUBLIC_API_BASE: `https://${apiDomain}`,
+        NUXT_PUBLIC_IMG_BASE: `https://${imgDomain}`,
         NUXT_PUBLIC_STAGE: stage,
       },
     })
@@ -88,9 +110,12 @@ export default $config({
     return {
       web: web.url,
       api: api.url,
+      img: imageCdn.url,
       webDomain,
       apiDomain,
+      imgDomain,
       table: appTable.name,
+      imageBucket: imageBucket.name,
     }
   },
 })
@@ -109,11 +134,13 @@ function domains(stage: Stage) {
       return {
         web: `${app}.${root}`,
         api: `api.${app}.${root}`,
+        img: `img.${app}.${root}`,
       }
     case 'dev':
       return {
         web: `${app}-dev.${root}`,
         api: `api.${app}-dev.${root}`,
+        img: `img.${app}-dev.${root}`,
       }
     default:
       throw new Error(`Invalid stage: ${stage}`)

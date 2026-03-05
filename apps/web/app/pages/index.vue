@@ -34,7 +34,8 @@
 import { LogOut, KeyRound } from 'lucide-vue-next'
 import { managedCreatePasskeyKey, managedLoginKey, managedLogoutKey } from '@/lib/injectionKeys'
 const toast = useToast()
-const { user, isLoading: isAuthLoading, fetchAuthorizedApi } = useWalletAuth()
+const { user, isLoading: isAuthLoading } = useWalletAuth()
+const api = useApi()
 const managedCreatePasskey = inject(managedCreatePasskeyKey)
 const managedLogin = inject(managedLoginKey)
 const managedLogout = inject(managedLogoutKey)
@@ -46,7 +47,7 @@ const tryApi = async () => {
   isActionLoading.value = true
   toast.loading('サーバと通信中', isActionLoading)
   try {
-    const response = await fetchAuthorizedApi('/privateApiSample', { method: 'POST' })
+    const response = await api.postPrivateApiSample()
     toast.success(`API Response: ${JSON.stringify(response)}`)
   } catch (error) {
     console.error('API call failed:', error)

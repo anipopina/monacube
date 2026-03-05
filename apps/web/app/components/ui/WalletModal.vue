@@ -1,7 +1,10 @@
 <!-- WalletModal Component -->
 
 <template>
-  <dialog ref="dialogRef" class="lcm-modal" :class="{ 'lcm-modal--open': isOpen }" @click="onDialogClick">
+  <dialog ref="dialogRef" class="lcm-modal lc-modal" :class="{ 'lcm-modal--open': isOpen }" @click="onDialogClick">
+    <div v-if="walletAddress" class="lc-usercolors">
+      <UiColoredAddrIcon :address="walletAddress" :size="160" :radius="3" />
+    </div>
     <Transition :name="panelTransitionName" mode="out-in">
       <!-- Main Panel -->
       <div v-if="activePanel === 'root'" class="lcm-panel">
@@ -286,11 +289,29 @@ defineExpose({ openModal })
 @use '@/assets/css/modal' as modal;
 @include modal.styles; // Modal共通スタイル読み込み
 
+.lc-modal {
+  overflow: visible; // usercolorsをborderより上に表示するため
+}
+
 .lc-topheader {
   padding: var(--space-6) 0 var(--space-4) 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+}
+
+.lc-usercolors {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  height: 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: center; // show middle slice of the icon
+  border: 1px solid transparent;
+  border-top-left-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
+  box-sizing: content-box; // make border not take space
 }
 
 .lc-address {

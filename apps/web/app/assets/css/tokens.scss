@@ -7,29 +7,29 @@ $pagewidth-max: 1280px;
 
 :root {
   // typography
-  --font-main: 'M PLUS Rounded 1c', sans-serif;
+  --font-main: 'Noto Serif JP', serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 
   // colors (dark - default)
-  --color-bg: #0b1020;
-  --color-surface: #121930;
-  --color-surface2: #1a243c;
+  --color-bg: #171717;
+  --color-surface: #1a1a1a;
+  --color-surface2: #222222;
   --color-fg: #f0f0f0;
-  --color-fg-surface: #d0d0e0; // スイッチのトグル部分などfgを広めの塗りに使いたいとき
-  --color-muted: #94a3b8;
-  --color-border: #1e293b;
+  --color-fg-surface: #d0d0d0; // スイッチのトグル部分などfgを広めの塗りに使いたいとき
+  --color-muted: #b0b0b0;
+  --color-border: #262626;
 
-  --color-primary: olivedrab; // #6b8e23
+  --color-primary: #2f4156;
   --color-primary-fg: #ffffff;
-  --color-primary-surface: #607e20; // スイッチの背景などprimaryを広めの塗りに使いたいとき
-  --color-primary-gradient: linear-gradient(-20deg, #9b8603, #6b8e23);
+  --color-primary-surface: #2c3e53; // スイッチの背景などprimaryを広めの塗りに使いたいとき
+  // --color-primary-gradient: linear-gradient(-20deg, #9b8603, #6b8e23);
 
-  --color-success: #22c55e;
-  --color-success-fg: #ffffff;
-  --color-danger: #dd4411;
-  --color-danger-fg: #0b1020;
-  --color-warning: #e3b341;
-  --color-warning-fg: #0b1020;
+  --color-success: #2faf5b;
+  --color-success-fg: #f0f0f0;
+  --color-danger: #ca452a;
+  --color-danger-fg: #101010;
+  --color-warning: #c39b2d;
+  --color-warning-fg: #101010;
 
   // font size
   --font-size-xs: 0.75rem; // 12px
@@ -56,9 +56,9 @@ $pagewidth-max: 1280px;
   --pagewidth-max: #{$pagewidth-max};
 
   // corner radius
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
 
   // spacing
   --space-1: 4px;
@@ -100,7 +100,8 @@ $pagewidth-max: 1280px;
   // effects
   --filter-hover: brightness(120%);
   --filter-hover-opacity: opacity(80%); // 色によってbrightnessの変化がわかりにくい場合に使う
-  --filter-hover-backlight: brightness(120%) drop-shadow(0 0 5px rgb(255 255 255 / 20%));
+  // --filter-hover-backlight: brightness(120%) drop-shadow(0 0 5px rgb(255 255 255 / 20%));
+  --filter-hover-backlight: brightness(120%); // MonaCubeでは通常hoverと同じ効果で十分
 }
 
 // Light mode overrides
@@ -113,17 +114,17 @@ $pagewidth-max: 1280px;
   --color-muted: #64748b;
   --color-border: #dddddd;
 
-  --color-primary: #83aa35;
+  --color-primary: #53989c;
   --color-primary-fg: #ffffff;
-  --color-primary-surface: #8fb83d;
-  --color-primary-gradient: linear-gradient(-20deg, #b39d0e, #83aa35);
+  --color-primary-surface: #5ca6aa;
+  // --color-primary-gradient: linear-gradient(-20deg, #b39d0e, #83aa35);
 
-  --color-success: #22c55e;
-  --color-success-fg: #ffffff;
-  --color-danger: #dc2626;
-  --color-danger-fg: #ffffff;
-  --color-warning: #f59e0b;
-  --color-warning-fg: #000000;
+  --color-success: #2faf5b;
+  --color-success-fg: #f0f0f0;
+  --color-danger: #ca452a;
+  --color-danger-fg: #f0f0f0;
+  --color-warning: #c39b2d;
+  --color-warning-fg: #f0f0f0;
 
   // shadows
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 15%);

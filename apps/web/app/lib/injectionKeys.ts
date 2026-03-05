@@ -5,3 +5,4 @@ export const managedCreatePasskeyKey: InjectionKey<() => Promise<void>> = Symbol
 export const managedLoginKey: InjectionKey<() => Promise<void>> = Symbol('managedLogin')
 export const managedLogoutKey: InjectionKey<() => void> = Symbol('managedLogout')
 export const managedLockWalletKey: InjectionKey<() => void> = Symbol('managedLockWallet')
+export const openWalletModalKey: InjectionKey<() => void> = Symbol('openWalletModal')

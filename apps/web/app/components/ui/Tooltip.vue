@@ -37,11 +37,6 @@ const isVisible = ref(false)
 const hideTimer = ref<number | null>(null) // Timer for auto-hide on mobile
 const isMobile = ref(false)
 
-onMounted(() => {
-  // Simple mobile detection
-  isMobile.value = 'ontouchstart' in window || navigator.maxTouchPoints > 0
-})
-
 const handleMouseEnter = () => {
   if (isMobile.value) return
   if (hideTimer.value) {
@@ -79,6 +74,9 @@ const handleClickOutside = (event: MouseEvent) => {
 }
 
 onMounted(() => {
+  // Simple mobile detection
+  isMobile.value = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+
   document.addEventListener('click', handleClickOutside)
 })
 

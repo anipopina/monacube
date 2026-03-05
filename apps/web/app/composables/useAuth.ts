@@ -1,6 +1,5 @@
 // apps/web/app/composables/useAuth.ts
 
-import { FetchError } from 'ofetch'
 import type { AuthChallengeRequest, AuthChallengeOk, AuthVerifyRequest, AuthVerifyOk } from '@shared/api'
 
 const STOREKEY_AUTH_USER = 'auth_user'
@@ -9,25 +8,6 @@ interface AuthUser {
   address: string
   accessToken: string
   expiresAt: number // Unix timestamp (seconds)
-}
-
-export interface FetchOptions {
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS'
-  body?: BodyInit | Record<string, unknown> | null
-  query?: Record<string, unknown>
-  headers?: Record<string, string>
-  params?: Record<string, unknown>
-  [key: string]: unknown
-}
-
-/**
- * 認証エラー（401エラー、セッション期限切れなど）
- */
-export class AuthenticationError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'AuthenticationError'
-  }
 }
 
 export const useAuth = () => {
@@ -100,38 +80,6 @@ export const useAuth = () => {
     localStorage.removeItem(STOREKEY_AUTH_USER)
   }
 
-  /**
-   * 認証付きのfetchラッパー
-   * @param apiPath APIのパス（例: '/some/protected/endpoint'）
-   * @param options Fetchのオプション
-   * @returns APIのレスポンス
-   */
-  const fetchAuthorizedApi = async <T = unknown>(
-    apiPath: string, // e.g. '/some/protected/endpoint'
-    options?: FetchOptions,
-  ): Promise<T> => {
-    if (!user.value) throw new Error('User not logged in')
-    const url = `${apiBase}${apiPath}`
-    try {
-      return await $fetch<T>(url, {
-        ...options, // options.headers も入るけど下の headers で上書きする
-        headers: {
-          Authorization: `Bearer ${user.value.accessToken}`,
-          ...options?.headers,
-        },
-      })
-    } catch (error: unknown) {
-      if (error instanceof FetchError) {
-        // 401エラー時は自動ログアウト
-        if (error?.status === 401) {
-          logout()
-          throw new AuthenticationError(error.data?.message ?? 'Session expired or invalid token')
-        }
-      }
-      throw error
-    }
-  }
-
   load()
 
   return {
@@ -139,7 +87,6 @@ export const useAuth = () => {
     getChallenge,
     login,
     logout,
-    fetchAuthorizedApi,
   }
 }
 
@@ -155,8 +102,5 @@ const signature = signMessage(message)
 
 // 3. ログイン
 await auth.login(address, message, signature, nonce)
-
-// 4. 認証付きAPI呼び出し
-const data = await auth.fetchAuthorizedApi('/some/protected/endpoint')
 
 */

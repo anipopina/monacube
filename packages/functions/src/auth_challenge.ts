@@ -3,9 +3,10 @@ import { marshall } from '@aws-sdk/util-dynamodb'
 import * as crypto from 'node:crypto'
 
 import type { AuthChallengeOk, AuthChallengeRequest } from '@shared/api'
+import type { NonceRecord } from '@shared/ddbRecord'
 
-import { mustGetEnv, responseJson, normalizeAddress } from '../lib/util'
-import { ddb } from '../lib/ddb'
+import { mustGetEnv, responseJson, normalizeAddress } from './lib/util'
+import { ddb } from './lib/ddb'
 
 export async function handler(event: { body?: string }) {
   const appName = mustGetEnv('APP_NAME')
@@ -23,8 +24,9 @@ export async function handler(event: { body?: string }) {
   if (!address) return responseJson(400, { error: 'missing_address' })
 
   const nonce = crypto.randomBytes(16).toString('hex')
-  const now = Math.floor(Date.now() / 1000)
-  const ttl = now + 5 * 60 // 5分有効
+  const nowUnix = Math.floor(Date.now() / 1000)
+  const nowIso = new Date(nowUnix * 1000).toISOString()
+  const ttl = nowUnix + 5 * 60 // 5分有効
 
   // 署名させるメッセージ（SIWE風）
   const message = [
@@ -33,23 +35,23 @@ export async function handler(event: { body?: string }) {
     ``,
     `Origin: ${webOrigin}`,
     `Nonce: ${nonce}`,
-    `Issued At: ${new Date(now * 1000).toISOString()}`,
+    `Issued At: ${nowIso}`,
     `Expiration Time: ${new Date(ttl * 1000).toISOString()}`,
   ].join('\n')
 
-  // 単一テーブル: Nonceエンティティ
-  // pk=NONCE#<nonce>, sk=CHALLENGE, ttl=<unix sec>
+  const nonceRecord: NonceRecord = {
+    pk: `NONCE#${nonce}`,
+    sk: 'CHALLENGE',
+    type: 'NONCE',
+    ttl,
+    address,
+    message,
+    createdAt: nowIso,
+  }
   await ddb.send(
     new PutItemCommand({
       TableName: table,
-      Item: marshall({
-        pk: `NONCE#${nonce}`,
-        sk: 'CHALLENGE',
-        address,
-        message,
-        ttl,
-        createdAt: now,
-      }),
+      Item: marshall(nonceRecord),
       ConditionExpression: 'attribute_not_exists(pk)', // 被らないはずだけど一応
     }),
   )

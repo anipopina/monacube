@@ -41,7 +41,7 @@ withDefaults(defineProps<Props>(), {
   align-items: center;
   justify-content: center;
   gap: var(--space-1);
-  border-radius: 100px; // pill shape
+  border-radius: 4px; // pill shape
   border: 1px solid transparent;
   font-weight: var(--font-weight-medium);
   line-height: var(--line-height-tight);

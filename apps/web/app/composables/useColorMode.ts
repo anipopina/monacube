@@ -3,9 +3,10 @@
 export type ColorMode = 'light' | 'dark' | 'auto'
 
 const STOREKEY_COLORMODE = 'colormode'
+const DEFAULT_MODE: ColorMode = 'dark'
 
 export const useColorMode = () => {
-  const colorMode = useState<ColorMode>('colormode:colorMode', () => 'auto')
+  const colorMode = useState<ColorMode>('colormode:colorMode', () => DEFAULT_MODE)
   const isDark = useState<boolean>('colormode:isDark', () => true)
   const initialized = useState<boolean>('colormode:initialized', () => false)
 
@@ -33,9 +34,9 @@ export const useColorMode = () => {
     if (initialized.value) return
     initialized.value = true
 
-    // Load from localStorage or default to 'auto'
+    // Load from localStorage or default to DEFAULT_MODE
     const stored = localStorage.getItem(STOREKEY_COLORMODE) as ColorMode | null
-    const initial = stored || 'auto'
+    const initial = stored || DEFAULT_MODE
     colorMode.value = initial
     applyColorMode(initial)
 

@@ -1,0 +1,33 @@
+# S3 ImageBucket
+
+
+## Path Design
+
+users/
+  <userId>/
+    icon.webp (128x128)
+    icon@2x.webp (256×256)
+
+works/
+  <workId>/
+    original (ユーザがアップロードした画像を EXIF削除, カラープロファイルをsRGBに変換 してから保存)
+    large.webp (長辺 1920px, 想定サイズ 300KB〜1MB)
+    medium.webp (長辺 960px, 想定サイズ 100KB〜300KB)
+    thumb.webp (square crop 320x320, 想定サイズ 20KB〜60KB)
+
+uploads/
+  <uploadId>/
+    tmp
+
+
+## Upload Steps
+
+init
+ ↓
+uploads/<uploadId>/tmp にアップロード
+ ↓
+finalize
+ ↓
+works/<workId>/original に移動
+ ↓
+uploads は削除

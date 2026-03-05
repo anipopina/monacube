@@ -61,7 +61,7 @@ export default defineNuxtConfig({
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {
           rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;600&display=swap', // CHANGEME: フォント
+          href: 'https://fonts.googleapis.com/css2?family=Noto+Serif+JP&display=swap',
         },
       ],
     },
@@ -80,9 +80,10 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || '/api', // run dev 時は localhost/api に向くようにする
+      imgBase: process.env.NUXT_PUBLIC_IMG_BASE || `https://img.${DEV_HOSTNAME}`,
       stage: process.env.NUXT_PUBLIC_STAGE || 'dev',
-      webAuthnRpName: process.env.NUXT_PUBLIC_WEBAUTHN_RPNAME || APP_NAME,
-      webAuthnUserName: process.env.NUXT_PUBLIC_WEBAUTHN_USERNAME || 'Monar',
+      webAuthnRpName: APP_NAME,
+      webAuthnUserName: 'Monar',
     },
   },
   nitro: {

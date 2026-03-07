@@ -6,7 +6,7 @@ export const handler = privateApiHandler(async (event, auth) => {
   // auth.subject にユーザのアドレスが入ってるよ
   const response: PrivateApiSampleOk = {
     ok: true,
-    userID: auth.subject,
+    userId: auth.subject,
   }
   return responseJson(200, response)
 })

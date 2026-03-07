@@ -1,6 +1,6 @@
 // apps/web/app/composables/useAuth.ts
 
-import type { AuthChallengeRequest, AuthChallengeOk, AuthVerifyRequest, AuthVerifyOk } from '@shared/api'
+import type { AuthChallengeReqBody, AuthChallengeOk, AuthVerifyReqBody, AuthVerifyOk } from '@shared/api'
 
 const STOREKEY_AUTH_USER = 'auth_user'
 
@@ -42,7 +42,7 @@ export const useAuth = () => {
    * @returns チャレンジ情報
    */
   const getChallenge = async (address: string): Promise<AuthChallengeOk> => {
-    const body: AuthChallengeRequest = { address }
+    const body: AuthChallengeReqBody = { address }
     const response = await $fetch<AuthChallengeOk>(`${apiBase}/auth/challenge`, { method: 'POST', body })
     if (typeof response !== 'object') throw new Error('Invalid response')
     return response
@@ -56,7 +56,7 @@ export const useAuth = () => {
    * @param nonce チャレンジのnonce
    */
   const login = async (address: string, message: string, signature: string, nonce: string) => {
-    const body: AuthVerifyRequest = { address, message, signature, nonce }
+    const body: AuthVerifyReqBody = { address, message, signature, nonce }
     const response = await $fetch<AuthVerifyOk>(`${apiBase}/auth/verify`, { method: 'POST', body })
     if (typeof response !== 'object') throw new Error('Invalid response')
 

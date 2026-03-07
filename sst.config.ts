@@ -20,16 +20,35 @@ export default $config({
 
     // Database: Single DynamoDB Table
     const appTable = new sst.aws.Dynamo('AppTable', {
-      fields: { pk: 'string', sk: 'string' },
+      fields: {
+        pk: 'string',
+        sk: 'string',
+        GSI1PK: 'string',
+        GSI1SK: 'string',
+        GSI2PK: 'string',
+      },
       primaryIndex: { hashKey: 'pk', rangeKey: 'sk' },
+      globalIndexes: {
+        GSI1: {
+          hashKey: 'GSI1PK',
+          rangeKey: 'GSI1SK',
+        },
+        GSI2: {
+          hashKey: 'GSI2PK',
+          rangeKey: 'GSI1SK',
+        },
+      },
       ttl: 'ttl',
     })
 
     // Image hosting: S3 + CloudFront
+    const imageBucketAllowOrigins = [`https://${webDomain}`]
+    if (stage === 'dev') imageBucketAllowOrigins.push('http://localhost:3000') // 開発用
+
     const imageBucket = new sst.aws.Bucket('ImageBucket', {
       access: 'cloudfront',
       cors: {
-        allowOrigins: [`https://${webDomain}`],
+        allowOrigins: imageBucketAllowOrigins,
         allowMethods: ['GET', 'HEAD', 'PUT'],
         allowHeaders: ['*'],
       },
@@ -61,7 +80,12 @@ export default $config({
       IMG_BUCKET: imageBucket.name,
     }
 
-    // API: API Gateway
+    // API: API Gateway + Lambda
+    const apiRouteDefaults = {
+      link: [appTable, JWT_SECRET, imageBucket],
+      environment: functionEnv,
+      memory: '1024 MB' as const,
+    }
     const api = new sst.aws.ApiGatewayV2('Api', {
       domain: { name: apiDomain },
       cors: {
@@ -72,25 +96,35 @@ export default $config({
       transform: {
         route: {
           handler: (args) => {
-            args.link ??= [appTable, JWT_SECRET, imageBucket]
-            args.environment ??= functionEnv
-            args.memory ??= '1024 MB'
+            args.link ??= apiRouteDefaults.link
+            args.environment ??= apiRouteDefaults.environment
+            args.memory ??= apiRouteDefaults.memory
           },
         },
       },
     })
 
+    // public API routes (no authentication required)
     api.route('GET /health', 'packages/functions/src/health.handler')
     api.route('POST /auth/challenge', 'packages/functions/src/auth_challenge.handler')
     api.route('POST /auth/verify', 'packages/functions/src/auth_verify.handler')
-    // api.route('GET /works', 'packages/functions/src/works.handler')
-    // api.route('GET /works/{workId}', 'packages/functions/src/works_item.get')
-    // api.route('DELETE /works/{workId}', 'packages/functions/src/works_item.delete')
+    api.route('GET /works', 'packages/functions/src/works.handler')
+    api.route('GET /works/{workId}', 'packages/functions/src/work.get')
+    api.route('GET /users/{userId}', 'packages/functions/src/user.handler')
+
+    // private API routes (authentication required)
+    api.route('POST /privateApiSample', 'packages/functions/src/privateApiSample.handler')
     api.route('POST /works/uploads/init', 'packages/functions/src/works_uploads_init.handler')
-    api.route('POST /works/uploads/finalize', 'packages/functions/src/works_uploads_finalize.handler')
+    api.route('POST /works/uploads/finalize', {
+      ...apiRouteDefaults,
+      handler: 'packages/functions/src/works_uploads_finalize.handler',
+      memory: '2048 MB',
+      nodejs: { install: ['sharp'] },
+    })
+    // api.route('PUT /works/{workId}', 'packages/functions/src/work.put')
+    // api.route('DELETE /works/{workId}', 'packages/functions/src/work.delete')
     // api.route('POST /me/icon/uploads/init', 'packages/functions/src/me_icon_uploads_init.handler')
     // api.route('POST /me/icon/uploads/finalize', 'packages/functions/src/me_icon_uploads_finalize.handler')
-    api.route('POST /privateApiSample', 'packages/functions/src/privateApiSample.handler')
 
     // ========= Frontend (Nuxt SPA Static) =========
     const web = new sst.aws.StaticSite('Web', {

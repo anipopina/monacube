@@ -2,32 +2,26 @@ import { GetItemCommand, TransactWriteItemsCommand, UpdateItemCommand } from '@a
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 import { SignJWT } from 'jose'
 
-import type { AuthVerifyOk, AuthVerifyRequest } from '@shared/api'
+import type { AuthVerifyOk, AuthVerifyReqBody } from '@shared/api'
 import type { NonceRecord, UserRecord, UserStatsRecord } from '@shared/ddbRecord'
 
-import { mustGetEnv, responseJson, jwtSecretKey, normalizeAddress } from './lib/util'
+import { apiHandler, HttpError, jwtSecretKey, mustGetEnv, normalizeAddress, responseJson, parseEventBody } from './lib/util'
 import { ddb } from './lib/ddb'
 import { verifySignature } from './lib/monacoin'
 
 const ACCESS_TOKEN_EXPIRES_IN_SEC = 15 * 60 // 15分
 
-export async function handler(event: { body?: string }) {
+export const handler = apiHandler(async (event) => {
   const table = mustGetEnv('APP_TABLE')
   const issuer = mustGetEnv('JWT_ISSUER')
   const audience = mustGetEnv('JWT_AUDIENCE')
 
-  // Parse request body
-  let request: Partial<AuthVerifyRequest> = {}
-  try {
-    request = event?.body ? JSON.parse(event.body) : {}
-  } catch {
-    return responseJson(400, { error: 'invalid_json' })
-  }
+  const request = parseEventBody<AuthVerifyReqBody>(event)
   const address = request.address ? normalizeAddress(request.address) : ''
   const nonce = (request.nonce || '').trim()
   const message = request.message || ''
   const signature = request.signature || ''
-  if (!address || !nonce || !message || !signature) return responseJson(400, { error: 'missing_fields' })
+  if (!address || !nonce || !message || !signature) throw new HttpError(400, { error: 'missing_fields' })
 
   // 1) nonceレコード取得
   const ddbResNonce = await ddb.send(
@@ -37,20 +31,20 @@ export async function handler(event: { body?: string }) {
       ConsistentRead: true,
     }),
   )
-  if (!ddbResNonce.Item) return responseJson(401, { error: 'invalid_nonce' })
+  if (!ddbResNonce.Item) throw new HttpError(401, { error: 'invalid_nonce' })
 
   const nonceItem = unmarshall(ddbResNonce.Item) as NonceRecord
 
   const nowUnix = Math.floor(Date.now() / 1000)
   const nowIso = new Date(nowUnix * 1000).toISOString()
-  if (nonceItem.ttl <= nowUnix) return responseJson(401, { error: 'nonce_expired' })
-  if (nonceItem.usedAt) return responseJson(401, { error: 'nonce_already_used' })
-  if (nonceItem.address !== address) return responseJson(401, { error: 'address_mismatch' })
-  if (nonceItem.message !== message) return responseJson(401, { error: 'message_mismatch' })
+  if (nonceItem.ttl <= nowUnix) throw new HttpError(401, { error: 'nonce_expired' })
+  if (nonceItem.usedAt) throw new HttpError(401, { error: 'nonce_already_used' })
+  if (nonceItem.address !== address) throw new HttpError(401, { error: 'address_mismatch' })
+  if (nonceItem.message !== message) throw new HttpError(401, { error: 'message_mismatch' })
 
   // 2) 署名検証
   const ok = verifySignature(address, message, signature)
-  if (!ok) return responseJson(401, { error: 'invalid_signature' })
+  if (!ok) throw new HttpError(401, { error: 'invalid_signature' })
 
   // 3) NONCE を消費（リプレイ防止）
   // UpdateItem + 条件で usedAt が未設定の時だけ通す
@@ -65,7 +59,7 @@ export async function handler(event: { body?: string }) {
       }),
     )
   } catch {
-    return responseJson(401, { error: 'nonce_race_or_used' })
+    throw new HttpError(401, { error: 'nonce_race_or_used' })
   }
 
   // 4) USER upsert
@@ -148,7 +142,7 @@ export async function handler(event: { body?: string }) {
     }
   } catch (error) {
     console.error('DynamoDB error in auth_verify', { address, nonce, error })
-    return responseJson(500, { error: 'db_error' })
+    throw new HttpError(500, { error: 'db_error' })
   }
 
   // 5) access token 発行
@@ -167,7 +161,7 @@ export async function handler(event: { body?: string }) {
     userStats: userStatsRecord,
   }
   return responseJson(200, responseBody)
-}
+})
 
 function issueAccessToken(params: {
   subject: string // USER#<address> じゃなく "<address>" 推奨

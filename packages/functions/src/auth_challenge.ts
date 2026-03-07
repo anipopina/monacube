@@ -2,26 +2,20 @@ import { PutItemCommand } from '@aws-sdk/client-dynamodb'
 import { marshall } from '@aws-sdk/util-dynamodb'
 import * as crypto from 'node:crypto'
 
-import type { AuthChallengeOk, AuthChallengeRequest } from '@shared/api'
+import type { AuthChallengeOk, AuthChallengeReqBody } from '@shared/api'
 import type { NonceRecord } from '@shared/ddbRecord'
 
-import { mustGetEnv, responseJson, normalizeAddress } from './lib/util'
+import { apiHandler, HttpError, mustGetEnv, normalizeAddress, responseJson, parseEventBody } from './lib/util'
 import { ddb } from './lib/ddb'
 
-export async function handler(event: { body?: string }) {
+export const handler = apiHandler(async (event) => {
   const appName = mustGetEnv('APP_NAME')
   const table = mustGetEnv('APP_TABLE')
   const webOrigin = mustGetEnv('WEB_ORIGIN')
 
-  // Parse request body
-  let request: Partial<AuthChallengeRequest> = {}
-  try {
-    request = event?.body ? JSON.parse(event.body) : {}
-  } catch {
-    return responseJson(400, { error: 'invalid_json' })
-  }
+  const request = parseEventBody<AuthChallengeReqBody>(event)
   const address = request.address ? normalizeAddress(request.address) : ''
-  if (!address) return responseJson(400, { error: 'missing_address' })
+  if (!address) throw new HttpError(400, { error: 'missing_address' })
 
   const nonce = crypto.randomBytes(16).toString('hex')
   const nowUnix = Math.floor(Date.now() / 1000)
@@ -62,4 +56,4 @@ export async function handler(event: { body?: string }) {
     expiresAt: ttl,
   }
   return responseJson(200, responseBody)
-}
+})

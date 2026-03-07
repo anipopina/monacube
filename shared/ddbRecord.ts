@@ -55,7 +55,6 @@ export type WorkRecord = DdbBaseRecord<'WORK', WorkPk, 'META'> & {
   description: string
   createdAt: Iso8601String
   updatedAt: Iso8601String // also used as cache-busting key for image
-  imageKey: string // s3 key (usually "works/<workId>/original")
   width: number
   height: number
   bytes: number

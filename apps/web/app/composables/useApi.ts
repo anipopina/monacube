@@ -1,7 +1,22 @@
 // apps/web/app/composables/useApi.ts
 // APIの型付きラッパーを提供するcomposable
 
-import type { HealthOk, AuthChallengeRequest, AuthChallengeOk, AuthVerifyRequest, AuthVerifyOk, PrivateApiSampleOk } from '@shared/api'
+import type {
+  HealthOk,
+  AuthChallengeReqBody,
+  AuthChallengeOk,
+  AuthVerifyReqBody,
+  AuthVerifyOk,
+  PrivateApiSampleOk,
+  WorksUploadsInitOk,
+  WorksUploadsInitReqBody,
+  WorksUploadsFinalizeReqBody,
+  WorksUploadsFinalizeOk,
+  GetWorksOk,
+  GetWorkOk,
+  GetUserOk,
+  GetWorksReqQuery,
+} from '@shared/api'
 import { FetchError } from 'ofetch'
 
 export const useApi = () => {
@@ -36,26 +51,48 @@ export const useApi = () => {
   // MARK: Public endpoints
   // ----------------------------------------------------------------
 
-  /** GET /health */
+  // GET /health
   const getHealth = () => apiFetch<HealthOk>('/health')
 
-  /** POST /auth/challenge */
-  const postAuthChallenge = (body: AuthChallengeRequest) => apiFetch<AuthChallengeOk>('/auth/challenge', { method: 'POST', body })
+  // POST /auth/challenge
+  const postAuthChallenge = (body: AuthChallengeReqBody) => apiFetch<AuthChallengeOk>('/auth/challenge', { method: 'POST', body })
 
-  /** POST /auth/verify */
-  const postAuthVerify = (body: AuthVerifyRequest) => apiFetch<AuthVerifyOk>('/auth/verify', { method: 'POST', body })
+  // POST /auth/verify
+  const postAuthVerify = (body: AuthVerifyReqBody) => apiFetch<AuthVerifyOk>('/auth/verify', { method: 'POST', body })
+
+  // GET /works
+  const getWorks = (query?: GetWorksReqQuery) => apiFetch<GetWorksOk>('/works', { method: 'GET', query })
+
+  // GET /works/{workId}
+  const getWork = (workId: string) => apiFetch<GetWorkOk>(`/works/${workId}`)
+
+  // GET /users/{userId}
+  const getUser = (userId: string) => apiFetch<GetUserOk>(`/users/${userId}`)
 
   // ----------------------------------------------------------------
   // MARK: Private endpoints (requires authentication)
   // ----------------------------------------------------------------
 
-  /** POST /privateApiSample */
+  // POST /privateApiSample
   const postPrivateApiSample = () => authedApiFetch<PrivateApiSampleOk>('/privateApiSample', { method: 'POST' })
+
+  // POST /works/uploads/init
+  const postWorksUploadsInit = (body: WorksUploadsInitReqBody) =>
+    authedApiFetch<WorksUploadsInitOk>('/works/uploads/init', { method: 'POST', body })
+
+  // POST /works/uploads/finalize
+  const postWorksUploadsFinalize = (body: WorksUploadsFinalizeReqBody) =>
+    authedApiFetch<WorksUploadsFinalizeOk>('/works/uploads/finalize', { method: 'POST', body })
 
   return {
     getHealth,
     postAuthChallenge,
     postAuthVerify,
+    getWorks,
+    getWork,
+    getUser,
     postPrivateApiSample,
+    postWorksUploadsInit,
+    postWorksUploadsFinalize,
   }
 }

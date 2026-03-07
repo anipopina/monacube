@@ -7,6 +7,13 @@ export type JsonResponse = {
   body: string
 }
 
+export type HandlerEvent = {
+  headers?: Record<string, string | undefined>
+  body?: string
+  queryStringParameters?: Record<string, string | undefined>
+  pathParameters?: Record<string, string | undefined>
+}
+
 export type AccessTokenAuth = {
   subject: string
   payload: JWTPayload
@@ -30,7 +37,8 @@ export function mustGetEnv(name: string): string {
 }
 
 export function mustGetSecret(name: string): string {
-  const v = Resource[name]?.value
+  const resourceMap = Resource as unknown as Record<string, { value?: string } | undefined>
+  const v = resourceMap[name]?.value
   if (v === undefined || v === '') throw new Error(`Missing secret: ${name}`)
   return v
 }
@@ -62,23 +70,36 @@ export function jwtSecretKey(): Uint8Array {
   return new TextEncoder().encode(jwtSecret)
 }
 
+export function parseEventBody<T>(event: HandlerEvent): T {
+  if (!event.body) throw new HttpError(400, { error: 'missing_body' })
+  try {
+    return JSON.parse(event.body) as T
+  } catch {
+    throw new HttpError(400, { error: 'invalid_json' })
+  }
+}
+
 /**
- * 認証付きAPIハンドラのラッパー
+ * 認証なしAPIハンドラのラッパー
  */
-export function privateApiHandler<
-  TEvent extends {
-    body?: string
-    headers?: Record<string, string | undefined>
-  },
->(inner: (event: TEvent, auth: AccessTokenAuth) => Promise<JsonResponse> | JsonResponse) {
-  return async (event: TEvent): Promise<JsonResponse> => {
+export function apiHandler(inner: (event: HandlerEvent) => Promise<JsonResponse> | JsonResponse) {
+  return async (event: HandlerEvent): Promise<JsonResponse> => {
     try {
-      const auth = await requireAccessToken(event.headers)
-      return await inner(event, auth)
+      return await inner(event)
     } catch (err) {
       return responseFromError(err)
     }
   }
+}
+
+/**
+ * 認証付きAPIハンドラのラッパー
+ */
+export function privateApiHandler(inner: (event: HandlerEvent, auth: AccessTokenAuth) => Promise<JsonResponse> | JsonResponse) {
+  return apiHandler(async (event) => {
+    const auth = await requireAccessToken(event.headers)
+    return inner(event, auth)
+  })
 }
 
 export async function requireAccessToken(headers?: Record<string, string | undefined>): Promise<AccessTokenAuth> {

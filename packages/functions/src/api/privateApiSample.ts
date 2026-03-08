@@ -1,6 +1,6 @@
-import { privateApiHandler, responseJson } from './lib/util'
+import { privateApiHandler, responseJson } from '../lib/util'
 
-import type { PrivateApiSampleOk } from '@shared/api'
+import type { PrivateApiSampleOk } from '@shared/apiInterface'
 
 export const handler = privateApiHandler(async (event, auth) => {
   // auth.subject にユーザのアドレスが入ってるよ

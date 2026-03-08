@@ -1,6 +1,6 @@
 // apps/web/app/composables/useAuth.ts
 
-import type { AuthChallengeReqBody, AuthChallengeOk, AuthVerifyReqBody, AuthVerifyOk } from '@shared/api'
+import type { AuthChallengeReqBody, AuthChallengeOk, AuthVerifyReqBody, AuthVerifyOk } from '@shared/apiInterface'
 
 const STOREKEY_AUTH_USER = 'auth_user'
 

@@ -2,11 +2,11 @@ import { PutItemCommand } from '@aws-sdk/client-dynamodb'
 import { marshall } from '@aws-sdk/util-dynamodb'
 import * as crypto from 'node:crypto'
 
-import type { AuthChallengeOk, AuthChallengeReqBody } from '@shared/api'
+import type { AuthChallengeOk, AuthChallengeReqBody } from '@shared/apiInterface'
 import type { NonceRecord } from '@shared/ddbRecord'
 
-import { apiHandler, HttpError, mustGetEnv, normalizeAddress, responseJson, parseEventBody } from './lib/util'
-import { ddb } from './lib/ddb'
+import { apiHandler, HttpError, mustGetEnv, normalizeAddress, responseJson, parseEventBody } from '../lib/util'
+import { ddb } from '../lib/ddb'
 
 export const handler = apiHandler(async (event) => {
   const appName = mustGetEnv('APP_NAME')

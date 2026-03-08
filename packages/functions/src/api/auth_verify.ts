@@ -2,12 +2,12 @@ import { GetItemCommand, TransactWriteItemsCommand, UpdateItemCommand } from '@a
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 import { SignJWT } from 'jose'
 
-import type { AuthVerifyOk, AuthVerifyReqBody } from '@shared/api'
+import type { AuthVerifyOk, AuthVerifyReqBody } from '@shared/apiInterface'
 import type { NonceRecord, UserRecord, UserStatsRecord } from '@shared/ddbRecord'
 
-import { apiHandler, HttpError, jwtSecretKey, mustGetEnv, normalizeAddress, responseJson, parseEventBody } from './lib/util'
-import { ddb } from './lib/ddb'
-import { verifySignature } from './lib/monacoin'
+import { apiHandler, HttpError, jwtSecretKey, mustGetEnv, normalizeAddress, responseJson, parseEventBody } from '../lib/util'
+import { ddb } from '../lib/ddb'
+import { verifySignature } from '../lib/monacoin'
 
 const ACCESS_TOKEN_EXPIRES_IN_SEC = 15 * 60 // 15分
 

@@ -3,10 +3,10 @@ import { DeleteItemCommand, GetItemCommand, PutItemCommand } from '@aws-sdk/clie
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 import { ulid } from 'ulid'
 
-import { ddb } from './lib/ddb'
-import { HttpError, mustGetEnv, privateApiHandler, responseJson, parseEventBody } from './lib/util'
+import { ddb } from '../lib/ddb'
+import { HttpError, mustGetEnv, privateApiHandler, responseJson, parseEventBody } from '../lib/util'
 
-import type { WorksUploadsFinalizeOk, WorksUploadsFinalizeReqBody } from '@shared/api'
+import type { WorksUploadsFinalizeOk, WorksUploadsFinalizeReqBody } from '@shared/apiInterface'
 import type { UploadRecord, WorkRecord } from '@shared/ddbRecord'
 import {
   WORK_DESCRIPTION_MAX_LENGTH,
@@ -17,7 +17,7 @@ import {
   WORK_TITLE_MAX_LENGTH,
   workId2imageKey,
 } from '@shared/const'
-import { downloadS3ObjectAsBuffer, ImageProcessError, processWorkImage, putS3Buffer } from './lib/image'
+import { downloadS3ObjectAsBuffer, ImageProcessError, processWorkImage, putS3Buffer } from '../lib/image'
 
 const s3 = new S3Client({})
 

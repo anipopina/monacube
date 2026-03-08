@@ -16,7 +16,7 @@ import type {
   GetWorkOk,
   GetUserOk,
   GetWorksReqQuery,
-} from '@shared/api'
+} from '@shared/apiInterface'
 import { FetchError } from 'ofetch'
 
 export const useApi = () => {

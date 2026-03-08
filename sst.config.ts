@@ -105,26 +105,26 @@ export default $config({
     })
 
     // public API routes (no authentication required)
-    api.route('GET /health', 'packages/functions/src/health.handler')
-    api.route('POST /auth/challenge', 'packages/functions/src/auth_challenge.handler')
-    api.route('POST /auth/verify', 'packages/functions/src/auth_verify.handler')
-    api.route('GET /works', 'packages/functions/src/works.handler')
-    api.route('GET /works/{workId}', 'packages/functions/src/work.get')
-    api.route('GET /users/{userId}', 'packages/functions/src/user.handler')
+    api.route('GET /health', 'packages/functions/src/api/health.handler')
+    api.route('POST /auth/challenge', 'packages/functions/src/api/auth_challenge.handler')
+    api.route('POST /auth/verify', 'packages/functions/src/api/auth_verify.handler')
+    api.route('GET /works', 'packages/functions/src/api/works.handler')
+    api.route('GET /works/{workId}', 'packages/functions/src/api/work.get')
+    api.route('GET /users/{userId}', 'packages/functions/src/api/user.handler')
 
     // private API routes (authentication required)
-    api.route('POST /privateApiSample', 'packages/functions/src/privateApiSample.handler')
-    api.route('POST /works/uploads/init', 'packages/functions/src/works_uploads_init.handler')
+    api.route('POST /privateApiSample', 'packages/functions/src/api/privateApiSample.handler')
+    api.route('POST /works/uploads/init', 'packages/functions/src/api/works_uploads_init.handler')
     api.route('POST /works/uploads/finalize', {
       ...apiRouteDefaults,
-      handler: 'packages/functions/src/works_uploads_finalize.handler',
+      handler: 'packages/functions/src/api/works_uploads_finalize.handler',
       memory: '2048 MB',
       nodejs: { install: ['sharp'] },
     })
-    // api.route('PUT /works/{workId}', 'packages/functions/src/work.put')
-    // api.route('DELETE /works/{workId}', 'packages/functions/src/work.delete')
-    // api.route('POST /me/icon/uploads/init', 'packages/functions/src/me_icon_uploads_init.handler')
-    // api.route('POST /me/icon/uploads/finalize', 'packages/functions/src/me_icon_uploads_finalize.handler')
+    // api.route('PUT /works/{workId}', 'packages/functions/src/api/work.put')
+    // api.route('DELETE /works/{workId}', 'packages/functions/src/api/work.delete')
+    // api.route('POST /me/icon/uploads/init', 'packages/functions/src/api/me_icon_uploads_init.handler')
+    // api.route('POST /me/icon/uploads/finalize', 'packages/functions/src/api/me_icon_uploads_finalize.handler')
 
     // ========= Frontend (Nuxt SPA Static) =========
     const web = new sst.aws.StaticSite('Web', {

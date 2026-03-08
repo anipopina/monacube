@@ -1,10 +1,10 @@
 import { QueryCommand, type AttributeValue } from '@aws-sdk/client-dynamodb'
 import { unmarshall } from '@aws-sdk/util-dynamodb'
 
-import { ddb } from './lib/ddb'
-import { apiHandler, HttpError, mustGetEnv, responseJson } from './lib/util'
+import { ddb } from '../lib/ddb'
+import { apiHandler, HttpError, mustGetEnv, responseJson } from '../lib/util'
 
-import type { GetWorksOk, GetWorksReqQuery } from '@shared/api'
+import type { GetWorksOk, GetWorksReqQuery } from '@shared/apiInterface'
 import type { WorkRecord } from '@shared/ddbRecord'
 
 const DEFAULT_LIMIT = 20

@@ -1,10 +1,10 @@
 import { GetItemCommand, QueryCommand } from '@aws-sdk/client-dynamodb'
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 
-import { ddb } from './lib/ddb'
-import { apiHandler, HttpError, mustGetEnv, responseJson } from './lib/util'
+import { ddb } from '../lib/ddb'
+import { apiHandler, HttpError, mustGetEnv, responseJson } from '../lib/util'
 
-import type { GetUserOk } from '@shared/api'
+import type { GetUserOk } from '@shared/apiInterface'
 import type { UserRecord, WorkRecord } from '@shared/ddbRecord'
 
 export const handler = apiHandler(async (event) => {

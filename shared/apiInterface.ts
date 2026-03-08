@@ -1,4 +1,4 @@
-// shared/api.ts
+// shared/apiInterface.ts
 // APIのリクエスト/レスポンス型定義
 
 import type { UserRecord, UserStatsRecord, WorkRecord } from './ddbRecord'

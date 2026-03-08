@@ -1,15 +1,15 @@
-import { HttpError, mustGetEnv, privateApiHandler, responseJson, parseEventBody } from './lib/util'
+import { HttpError, mustGetEnv, privateApiHandler, responseJson, parseEventBody } from '../lib/util'
 import { PutItemCommand } from '@aws-sdk/client-dynamodb'
 import { marshall } from '@aws-sdk/util-dynamodb'
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { ulid } from 'ulid'
 
-import type { WorksUploadsInitOk, WorksUploadsInitReqBody } from '@shared/api'
+import type { WorksUploadsInitOk, WorksUploadsInitReqBody } from '@shared/apiInterface'
 import type { UploadRecord } from '@shared/ddbRecord'
 import { WORK_IMAGE_ALLOWEDCONTENTTYPES, WORK_IMAGE_MAX_BYTES } from '@shared/const'
 
-import { ddb } from './lib/ddb'
+import { ddb } from '../lib/ddb'
 
 const UPLOAD_EXPIRES_IN_SEC = 15 * 60
 

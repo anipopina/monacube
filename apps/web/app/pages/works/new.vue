@@ -1,16 +1,12 @@
 <template>
   <div>
     <h2 class="gc-page-title"><ImagePlus class="gc-icon gc-icon--title" /> New Artwork</h2>
-    <section class="gc-section-framed lc-upload-section">
-      <UiLoadingOverlay :show="isLoading" />
-
-      <p>画像・タイトル・説明を入力して投稿できます。</p>
-
+    <section class="gc-section-noframe lc-upload-section">
       <form class="lc-upload-form" @submit.prevent="submitArtwork">
         <label class="lc-field">
-          <span class="lc-field-label">Image</span>
+          <span class="lc-field-label">Image *</span>
           <input ref="fileInput" type="file" accept="image/jpeg,image/png,image/webp" :disabled="isLoading" @change="onChangeFile" />
-          <small class="lc-field-help"> JPEG / PNG / WEBP, max {{ Math.floor(WORK_IMAGE_MAX_BYTES / (1024 * 1024)) }}MB </small>
+          <small class="lc-field-help"> JPEG / PNG / WEBP, max {{ Math.floor(WORK_IMAGE_MAX_BYTES / (1024 * 1024)) }} MB </small>
         </label>
 
         <div v-if="previewUrl" class="lc-preview-wrap">
@@ -18,7 +14,7 @@
         </div>
 
         <label class="lc-field">
-          <span class="lc-field-label">Title</span>
+          <span class="lc-field-label">Title *</span>
           <input v-model.trim="title" type="text" :maxlength="WORK_TITLE_MAX_LENGTH" placeholder="作品タイトル" :disabled="isLoading" />
           <small class="lc-field-help">{{ title.length }} / {{ WORK_TITLE_MAX_LENGTH }}</small>
         </label>
@@ -29,41 +25,26 @@
             v-model.trim="description"
             :maxlength="WORK_DESCRIPTION_MAX_LENGTH"
             rows="6"
-            placeholder="作品の説明"
+            placeholder="作品の説明文"
             :disabled="isLoading"
           />
           <small class="lc-field-help">{{ description.length }} / {{ WORK_DESCRIPTION_MAX_LENGTH }}</small>
         </label>
 
-        <label class="lc-field">
-          <span class="lc-field-label">Tags</span>
-          <input v-model="tagsText" type="text" placeholder="例: pixel, mona, animation" :disabled="isLoading" @blur="normalizeTagsInput" />
-          <small class="lc-field-help">カンマ区切り。最大 {{ WORK_TAG_MAX_COUNT }} 個、各 {{ WORK_TAG_MAX_LENGTH }} 文字まで。</small>
-        </label>
-
-        <div v-if="normalizedTags.length" class="lc-tags">
-          <span v-for="tag in normalizedTags" :key="tag" class="lc-tag">#{{ tag }}</span>
-        </div>
-
         <div class="gc-actions gc-actions--right">
-          <UiButton type="button" :disabled="isLoading" @click="resetForm">Clear</UiButton>
+          <!-- <UiButton type="button" :disabled="isLoading" @click="resetForm">Clear</UiButton> -->
           <UiButton type="submit" variant="primary" :disabled="!canSubmit || isLoading">Upload Artwork</UiButton>
         </div>
       </form>
+
+      <UiLoadingOverlay :show="isLoading" />
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ImagePlus } from 'lucide-vue-next'
-import {
-  WORK_DESCRIPTION_MAX_LENGTH,
-  WORK_IMAGE_ALLOWEDCONTENTTYPES,
-  WORK_IMAGE_MAX_BYTES,
-  WORK_TAG_MAX_COUNT,
-  WORK_TAG_MAX_LENGTH,
-  WORK_TITLE_MAX_LENGTH,
-} from '@shared/const'
+import { WORK_DESCRIPTION_MAX_LENGTH, WORK_IMAGE_ALLOWEDCONTENTTYPES, WORK_IMAGE_MAX_BYTES, WORK_TITLE_MAX_LENGTH } from '@shared/const'
 
 const router = useRouter()
 const toast = useToast()
@@ -75,21 +56,20 @@ const selectedFile = ref<File | null>(null)
 const previewUrl = ref('')
 const title = ref('')
 const description = ref('')
-const tagsText = ref('')
 
 const isActionLoading = ref(false)
 const isLoading = computed(() => isAuthLoading.value || isActionLoading.value)
-const normalizedTags = computed(() => parseTags(tagsText.value))
 const canSubmit = computed(() => {
-  return Boolean(selectedFile.value) && title.value.length > 0 && description.value.length > 0
+  return Boolean(selectedFile.value) && title.value.length > 0
 })
 
-const setup = () => {
-  if (!user.value) router.push('/')
-  watch(user, (newUser) => {
-    if (!newUser) router.push('/')
-  })
-}
+watch(
+  user,
+  (value) => {
+    if (!value) router.push('/')
+  },
+  { immediate: true },
+)
 
 const onChangeFile = (event: Event) => {
   const target = event.target as HTMLInputElement | null
@@ -129,20 +109,12 @@ const submitArtwork = async () => {
     toast.error('タイトルを入力してください')
     return
   }
-  if (!description.value) {
-    toast.error('説明を入力してください')
-    return
-  }
   if (title.value.length > WORK_TITLE_MAX_LENGTH) {
     toast.error('タイトルが長すぎます')
     return
   }
   if (description.value.length > WORK_DESCRIPTION_MAX_LENGTH) {
-    toast.error('説明が長すぎます')
-    return
-  }
-  if (normalizedTags.value.length > WORK_TAG_MAX_COUNT) {
-    toast.error('タグ数が上限を超えています')
+    toast.error('説明文が長すぎます')
     return
   }
 
@@ -171,7 +143,6 @@ const submitArtwork = async () => {
       uploadId: init.uploadId,
       title: title.value,
       description: description.value,
-      tags: normalizedTags.value,
     })
 
     toast.success('作品を投稿しました')
@@ -184,35 +155,15 @@ const submitArtwork = async () => {
   }
 }
 
-const resetForm = () => {
-  title.value = ''
-  description.value = ''
-  tagsText.value = ''
-  selectedFile.value = null
-  if (fileInput.value) fileInput.value.value = ''
-  clearPreview()
-}
+// const resetForm = () => {
+//   title.value = ''
+//   description.value = ''
+//   selectedFile.value = null
+//   if (fileInput.value) fileInput.value.value = ''
+//   clearPreview()
+// }
 
-const normalizeTagsInput = () => {
-  tagsText.value = normalizedTags.value.join(', ')
-}
-
-function parseTags(raw: string): string[] {
-  const source = raw
-    .split(',')
-    .map((v) => v.trim())
-    .filter(Boolean)
-
-  const unique = new Set<string>()
-  for (const tag of source) {
-    if (tag.length > WORK_TAG_MAX_LENGTH) continue
-    unique.add(tag)
-    if (unique.size >= WORK_TAG_MAX_COUNT) break
-  }
-  return [...unique]
-}
-
-function clearPreview() {
+const clearPreview = () => {
   if (previewUrl.value) {
     URL.revokeObjectURL(previewUrl.value)
     previewUrl.value = ''
@@ -222,8 +173,6 @@ function clearPreview() {
 onBeforeUnmount(() => {
   clearPreview()
 })
-
-setup()
 </script>
 
 <style lang="scss" scoped>
@@ -265,21 +214,5 @@ setup()
   max-height: 320px;
   width: auto;
   border-radius: var(--radius-sm);
-}
-
-.lc-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.lc-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface2);
-  font-size: var(--font-size-sm);
 }
 </style>

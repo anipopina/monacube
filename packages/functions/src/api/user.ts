@@ -26,11 +26,16 @@ export const handler = apiHandler(async (event) => {
         TableName: table,
         IndexName: 'GSI1',
         KeyConditionExpression: 'GSI1PK = :gsi1pk AND begins_with(GSI1SK, :workPrefix)',
+        ScanIndexForward: false,
+        FilterExpression: '#status = :ok',
+        ExpressionAttributeNames: {
+          '#status': 'status',
+        },
         ExpressionAttributeValues: {
           ':gsi1pk': { S: `USER#${userId}` },
           ':workPrefix': { S: 'WORK#' },
+          ':ok': { S: 'OK' },
         },
-        ScanIndexForward: false,
       }),
     ),
   ])

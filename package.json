@@ -1,5 +1,5 @@
 {
-  "name": "template-nuxt-sst",
+  "name": "sst",
   "version": "1.0.0",
   "description": "Template for Nuxt SPA deployed with SST (AWS serverless)",
   "private": true,

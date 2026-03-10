@@ -83,7 +83,7 @@
         </section>
         <section class="lcm-panel-content">
           <div class="lcm-field">
-            <label class="lcm-label" for="send-to">宛先アドレス</label>
+            <label class="lcm-label" for="send-to">宛先アドレス *</label>
             <input
               id="send-to"
               v-model="sendTo"
@@ -95,7 +95,7 @@
             />
           </div>
           <div class="lcm-field">
-            <label class="lcm-label" for="send-amount">数量 (MONA)</label>
+            <label class="lcm-label" for="send-amount">数量 (MONA) *</label>
             <input
               id="send-amount"
               v-model="sendAmount"
@@ -110,7 +110,7 @@
             />
           </div>
           <div class="lcm-actions">
-            <UiButton variant="primary" @click="handleSend" :disabled="!wallet || isLoading"> Send MONA </UiButton>
+            <UiButton variant="primary" @click="handleSend" :disabled="!wallet || !canSubmit || isLoading"> Send MONA </UiButton>
           </div>
           <div v-if="!wallet" class="lcm-overlay">ウォレットがロックされています</div>
         </section>
@@ -140,6 +140,12 @@ const dialogRef = ref<HTMLDialogElement | null>(null)
 const isActionLoading = ref(false)
 const isLoading = computed(() => isAuthLoading.value || isActionLoading.value)
 const isOpen = ref(false)
+const canSubmit = computed(() => {
+  if (!wallet) return false
+  const destination = sendTo.value.trim()
+  const amountNum = Number(sendAmount.value)
+  return destination && Number.isFinite(amountNum) && amountNum > 0
+})
 
 const sendTo = ref('')
 const sendAmount = ref('')

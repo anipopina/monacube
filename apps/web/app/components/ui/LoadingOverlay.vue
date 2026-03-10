@@ -16,12 +16,11 @@ withDefaults(defineProps<{ show: boolean }>(), {
 .lc-overlay {
   position: absolute;
   inset: 0;
-  // z-index: var(--z-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgb(from var(--color-bg) r g b / 50%);
-  backdrop-filter: blur(5px);
+  backdrop-filter: blur(2px);
 }
 
 .lc-spinner {
@@ -42,8 +41,7 @@ withDefaults(defineProps<{ show: boolean }>(), {
 // Transition
 .lc-overlay-enter-active,
 .lc-overlay-leave-active {
-  // transition: opacity var(--duration-normal) var(--ease-out);
-  transition: opacity 10s var(--ease-out);
+  transition: opacity var(--duration-slow) var(--ease-out);
 }
 
 .lc-overlay-enter-from,

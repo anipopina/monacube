@@ -1,6 +1,7 @@
 // apps/web/app/composables/useAuth.ts
 
 import type { AuthChallengeReqBody, AuthChallengeOk, AuthVerifyReqBody, AuthVerifyOk } from '@shared/apiInterface'
+import type { UserRecord, UserStatsRecord } from '@shared/ddbRecord'
 
 const STOREKEY_AUTH_USER = 'auth_user'
 
@@ -8,6 +9,8 @@ interface AuthUser {
   address: string
   accessToken: string
   expiresAt: number // Unix timestamp (seconds)
+  userRecord: UserRecord
+  userStatsRecord: UserStatsRecord
 }
 
 export const useAuth = () => {
@@ -67,6 +70,8 @@ export const useAuth = () => {
       address,
       accessToken: response.accessToken,
       expiresAt,
+      userRecord: response.user,
+      userStatsRecord: response.userStats,
     }
     // トークンをlocalStorageに保存
     localStorage.setItem(STOREKEY_AUTH_USER, JSON.stringify(user.value))

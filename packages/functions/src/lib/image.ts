@@ -1,4 +1,4 @@
-import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { DeleteObjectsCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import sharp from 'sharp'
 
 export const WORK_IMAGE_LARGE_MAX_EDGE = 1920
@@ -50,6 +50,19 @@ export async function putS3Buffer(params: { s3: S3Client; bucket: string; key: s
       Key: params.key,
       Body: params.body,
       ContentType: params.contentType,
+    }),
+  )
+}
+
+export async function deleteS3Objects(params: { s3: S3Client; bucket: string; keys: string[] }): Promise<void> {
+  if (params.keys.length === 0) return
+
+  await params.s3.send(
+    new DeleteObjectsCommand({
+      Bucket: params.bucket,
+      Delete: {
+        Objects: params.keys.map((key) => ({ Key: key })),
+      },
     }),
   )
 }

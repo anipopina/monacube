@@ -1,18 +1,20 @@
 <template>
-  <div class="lc-work-detail">
-    <h2 class="gc-page-title"><Image class="gc-icon gc-icon--title" /> Artwork Detail</h2>
-
-    <section v-if="work" class="gc-section-framed">
+  <div>
+    <section v-if="work" class="gc-section-noframe">
       <div class="lc-media-wrap">
         <picture>
-          <source v-if="workMediumWebpUrl" :srcset="workMediumWebpUrl" type="image/webp" />
+          <source v-if="workLargeImageUrl && !isUnder1MB" :srcset="workLargeImageUrl" type="image/webp" />
           <img class="lc-image" :src="workOriginalImageUrl" :alt="work.title" loading="eager" />
         </picture>
       </div>
+    </section>
 
+    <section v-if="work" class="gc-section-noframe lc-work-info">
       <h3 class="lc-title">{{ work.title }}</h3>
-      <p class="lc-description">{{ work.description }}</p>
+      <p v-if="work.description" class="lc-description">{{ work.description }}</p>
+    </section>
 
+    <section v-if="work" class="gc-section-noframe lc-work-meta">
       <dl class="lc-meta-list">
         <div class="lc-meta-row">
           <dt>Artwork ID</dt>
@@ -37,21 +39,23 @@
           <dd>{{ work.width }} x {{ work.height }} px</dd>
         </div>
         <div class="lc-meta-row">
-          <dt>File Size</dt>
+          <dt>Original Size</dt>
           <dd>{{ formatBytes(work.bytes) }}</dd>
         </div>
       </dl>
+    </section>
 
-      <div v-if="tags.length" class="lc-tags">
-        <span v-for="tag in tags" :key="tag" class="lc-tag">#{{ tag }}</span>
+    <section v-if="work" class="gc-section-noframe lc-work-actions">
+      <div class="gc-actions gc-actions--left">
+        <UiButton variant="secondary" :iconRight="ExternalLink" @click="openOriginalImage"> View Original </UiButton>
       </div>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Image } from 'lucide-vue-next'
-import { formatBytes, formatIsoDate, getHttpErrorStatusCode, normalizeStringArray, workImageUrl } from '@/lib/util'
+import { ExternalLink } from 'lucide-vue-next'
+import { formatBytes, formatIsoDate, getHttpErrorStatusCode, workImageUrl } from '@/lib/util'
 
 const route = useRoute()
 const api = useApi()
@@ -69,16 +73,22 @@ const { data, error } = await useAsyncData(
   { watch: [workId] },
 )
 
-const work = computed(() => data.value?.work)
+const work = computed(() => {
+  console.log('work:', data.value?.work)
+  return data.value?.work
+})
 const workOriginalImageUrl = computed(() => {
   if (!work.value) return ''
   return workImageUrl(runtimeConfig.public.imgBase, work.value.workId, 'original')
 })
-const workMediumWebpUrl = computed(() => {
+const workLargeImageUrl = computed(() => {
   if (!work.value) return ''
-  return workImageUrl(runtimeConfig.public.imgBase, work.value.workId, 'medium')
+  return workImageUrl(runtimeConfig.public.imgBase, work.value.workId, 'large')
 })
-const tags = computed(() => normalizeStringArray(work.value?.tags))
+const isUnder1MB = computed(() => {
+  if (!work.value) return false
+  return work.value.bytes <= 1024 * 1024
+})
 
 watch(
   error,
@@ -88,7 +98,7 @@ watch(
   { immediate: true },
 )
 
-function toNuxtError(error: unknown) {
+const toNuxtError = (error: unknown) => {
   const statusCode = getHttpErrorStatusCode(error)
   if (statusCode === 404) {
     return createError({ statusCode: 404, statusMessage: 'Artwork not found' })
@@ -101,30 +111,38 @@ function toNuxtError(error: unknown) {
   }
   return createError({ statusCode: 500, statusMessage: 'Unknown error' })
 }
+
+const openOriginalImage = () => {
+  if (!workOriginalImageUrl.value) return
+  window.open(workOriginalImageUrl.value, '_blank')
+}
 </script>
 
 <style lang="scss" scoped>
-.lc-work-detail {
-  .gc-section-framed {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-  }
+@use '@/assets/css/tokens' as tokens;
+
+.lc-work-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.lc-work-meta {
+  padding-top: var(--space-5);
+}
+
+.lc-work-actions {
 }
 
 .lc-media-wrap {
   display: flex;
   justify-content: center;
-  padding: var(--space-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
+  padding: var(--space-6) 0;
 }
 
 .lc-image {
-  width: min(100%, 960px);
+  max-width: 100%;
   height: auto;
-  border-radius: var(--radius-sm);
   object-fit: contain;
 }
 
@@ -162,23 +180,7 @@ function toNuxtError(error: unknown) {
   }
 }
 
-.lc-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.lc-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface2);
-  font-size: var(--font-size-sm);
-}
-
-@media (max-width: 640px) {
+@media (max-width: tokens.$pagewidth-phone) {
   .lc-meta-row {
     grid-template-columns: 1fr;
     gap: 0;

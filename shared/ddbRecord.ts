@@ -6,7 +6,7 @@
 Key Conventions
 
 - Prefix format: <ENTITY>#<id>
-  examples: USER#<userId>, WORK#<workId>, TAG#<tag>
+  examples: USER#<userId>, WORK#<workId>
 - Sort key for item kinds: <KIND>#<...>
   examples: PROFILE, META, CONTENT, STATS, INDEX#<...>
 - All keys are UPPER_SNAKE prefixes; ids are case-sensitive as-is.
@@ -48,9 +48,11 @@ export type UserStatsRecord = DdbBaseRecord<'USER_STATS', UserPk, 'STATS'> & {
   lastLoginAt: Iso8601String
 }
 
+export type WorkStatus = 'SAVING' | 'OK' | 'DELETING'
 export type WorkRecord = DdbBaseRecord<'WORK', WorkPk, 'META'> & {
   workId: string // ULID
   ownerId: string
+  status: WorkStatus
   title: string
   description: string
   createdAt: Iso8601String
@@ -58,18 +60,23 @@ export type WorkRecord = DdbBaseRecord<'WORK', WorkPk, 'META'> & {
   width: number
   height: number
   bytes: number
-  tags: ReadonlyArray<string> | ReadonlySet<string>
   blurHash: string
   palette: unknown
+
   GSI1PK: UserPk // GS1 for querying works by user
-  GSI1SK: `WORK#${string}#${string}` // format: WORK#<createdAt>#<workId> (also reused as GSI2 sort key)
+  GSI1SK: `WORK#${Iso8601String}#${string}` // format: WORK#<createdAt>#<workId> (also reused as GSI2 sort key)
+
   GSI2PK: 'FEED' // GS2 for querying works for feed; sort key is the same as GSI1SK to allow sorting by createdAt
+
+  GSI3PK?: `WORK_STATUS#${WorkStatus}` // GS3 for querying works by status; optional since it's only needed for non-OK statuses
+  GSI3SK?: `WORK#${Iso8601String}#${string}` // format: WORK#<statusUpdatedAt>#<workId>
 }
 
 // tip record for each user to display history
 // since the exact history can be checked on the block explorer, the integrity of this record can be relaxed.
 // denormalized for both sender and receiver to simplify querying; one tip tx corresponds to two records with isIn differentiating direction
-export type TipRecord = DdbBaseRecord<'TIP', UserPk, `TIP#${string}#${string}`> & {
+// sk format: TIP#<time>#<txIdFirst16> (time is used for sorting; txId is used for deduplication in case of retries)
+export type TipRecord = DdbBaseRecord<'TIP', UserPk, `TIP#${Iso8601String}#${string}`> & {
   txId: string
   time: Iso8601String
   isIn: boolean // true for receiver's record, false for sender's record

@@ -7,7 +7,7 @@ import { apiHandler, HttpError, mustGetEnv, responseJson } from '../lib/util'
 import type { GetWorkOk } from '@shared/apiInterface'
 import type { WorkRecord } from '@shared/ddbRecord'
 
-export const get = apiHandler(async (event) => {
+export const handler = apiHandler(async (event) => {
   const table = mustGetEnv('APP_TABLE')
 
   const workId = (event.pathParameters?.workId || '').trim()

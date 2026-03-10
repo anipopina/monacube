@@ -26,6 +26,8 @@ export default $config({
         GSI1PK: 'string',
         GSI1SK: 'string',
         GSI2PK: 'string',
+        GSI3PK: 'string',
+        GSI3SK: 'string',
       },
       primaryIndex: { hashKey: 'pk', rangeKey: 'sk' },
       globalIndexes: {
@@ -36,6 +38,10 @@ export default $config({
         GSI2: {
           hashKey: 'GSI2PK',
           rangeKey: 'GSI1SK',
+        },
+        GSI3: {
+          hashKey: 'GSI3PK',
+          rangeKey: 'GSI3SK',
         },
       },
       ttl: 'ttl',
@@ -109,11 +115,10 @@ export default $config({
     api.route('POST /auth/challenge', 'packages/functions/src/api/auth_challenge.handler')
     api.route('POST /auth/verify', 'packages/functions/src/api/auth_verify.handler')
     api.route('GET /works', 'packages/functions/src/api/works.handler')
-    api.route('GET /works/{workId}', 'packages/functions/src/api/work.get')
+    api.route('GET /works/{workId}', 'packages/functions/src/api/work-get.handler')
     api.route('GET /users/{userId}', 'packages/functions/src/api/user.handler')
 
     // private API routes (authentication required)
-    api.route('POST /privateApiSample', 'packages/functions/src/api/privateApiSample.handler')
     api.route('POST /works/uploads/init', 'packages/functions/src/api/works_uploads_init.handler')
     api.route('POST /works/uploads/finalize', {
       ...apiRouteDefaults,
@@ -121,8 +126,9 @@ export default $config({
       memory: '2048 MB',
       nodejs: { install: ['sharp'] },
     })
-    // api.route('PUT /works/{workId}', 'packages/functions/src/api/work.put')
-    // api.route('DELETE /works/{workId}', 'packages/functions/src/api/work.delete')
+    // api.route('PUT /works/{workId}', 'packages/functions/src/api/work-put.handler')
+    api.route('DELETE /works/{workId}', 'packages/functions/src/api/work-delete.handler')
+    api.route('GET /me/tips', 'packages/functions/src/api/me_tips.handler')
     // api.route('POST /me/icon/uploads/init', 'packages/functions/src/api/me_icon_uploads_init.handler')
     // api.route('POST /me/icon/uploads/finalize', 'packages/functions/src/api/me_icon_uploads_finalize.handler')
 

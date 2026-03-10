@@ -23,12 +23,17 @@ export const handler = apiHandler(async (event) => {
       TableName: table,
       IndexName: 'GSI2',
       KeyConditionExpression: 'GSI2PK = :feed',
-      ExpressionAttributeValues: {
-        ':feed': { S: 'FEED' },
-      },
       ScanIndexForward: false,
+      FilterExpression: '#status = :ok',
       Limit: query.limit ?? DEFAULT_LIMIT,
       ExclusiveStartKey: parsePageToken(query.lastEvaluatedKey),
+      ExpressionAttributeNames: {
+        '#status': 'status',
+      },
+      ExpressionAttributeValues: {
+        ':feed': { S: 'FEED' },
+        ':ok': { S: 'OK' },
+      },
     }),
   )
 

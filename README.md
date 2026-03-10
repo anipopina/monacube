@@ -12,7 +12,7 @@
 ## Directories
 
 ```
-template-nuxt-sst/
+project-root/
   sst.config.ts          # サーバレスアーキテクチャ管理: SST
   package.json
   apps/
@@ -56,12 +56,19 @@ uploads/
     tmp
 ```
 
+### Upload Sequence
+
 1. init API でtmpへのアップロードURLを発行
 1. クライアントが画像をtmpにアップロード
 1. finalize API で
    1. tmpにアップロードされた画像のサイズなどをチェック
    1. 画像のバリエーションを生成して保存
    1. DB更新
+
+### Delivery
+
+- original が 1MB 未満ならアートワーク詳細で original を表示 / 1MB以上なら large.webp を表示
+- blurHash でロード時間をつなぐ
 
 ## Other Definition Files
 

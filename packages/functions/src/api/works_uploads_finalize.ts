@@ -1,5 +1,5 @@
 import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3'
-import { DeleteItemCommand, GetItemCommand, PutItemCommand } from '@aws-sdk/client-dynamodb'
+import { DeleteItemCommand, GetItemCommand, PutItemCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb'
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 import { ulid } from 'ulid'
 
@@ -12,8 +12,6 @@ import {
   WORK_DESCRIPTION_MAX_LENGTH,
   WORK_IMAGE_MAX_HEIGHT,
   WORK_IMAGE_MAX_WIDTH,
-  WORK_TAG_MAX_COUNT,
-  WORK_TAG_MAX_LENGTH,
   WORK_TITLE_MAX_LENGTH,
   workId2imageKey,
 } from '@shared/const'
@@ -24,7 +22,6 @@ const s3 = new S3Client({})
 export const handler = privateApiHandler(async (event, auth) => {
   const table = mustGetEnv('APP_TABLE')
   const bucket = mustGetEnv('IMG_BUCKET')
-  const imageOrigin = mustGetEnv('IMG_ORIGIN')
   const userId = auth.subject
 
   // MARK: parse and validate request body
@@ -32,12 +29,10 @@ export const handler = privateApiHandler(async (event, auth) => {
   const uploadId = (request.uploadId || '').trim()
   const title = (request.title || '').trim()
   const description = (request.description || '').trim()
-  const tags = normalizeTags(request.tags)
 
-  if (!uploadId || !title || !description) throw new HttpError(400, { error: 'missing_fields' })
+  if (!uploadId || !title) throw new HttpError(400, { error: 'missing_fields' })
   if (title.length > WORK_TITLE_MAX_LENGTH) throw new HttpError(400, { error: 'title_too_long' })
   if (description.length > WORK_DESCRIPTION_MAX_LENGTH) throw new HttpError(400, { error: 'description_too_long' })
-  if (tags.length > WORK_TAG_MAX_COUNT) throw new HttpError(400, { error: 'too_many_tags' })
 
   // MARK: validate upload session
   const ddbResUpload = await ddb.send(
@@ -79,13 +74,44 @@ export const handler = privateApiHandler(async (event, auth) => {
   }
   // TODO: blurHashやパレットの生成
 
-  // MARK: write processed images
   const workId = ulid()
   const imageKey = workId2imageKey(workId, 'original')
   const largeWebpKey = workId2imageKey(workId, 'large')
   const mediumWebpKey = workId2imageKey(workId, 'medium')
   const thumbWebpKey = workId2imageKey(workId, 'thumb')
 
+  const createIso = new Date().toISOString()
+  const workRecord: WorkRecord = {
+    pk: `WORK#${workId}`,
+    sk: 'META',
+    type: 'WORK',
+    workId,
+    ownerId: userId,
+    status: 'SAVING', // SAVINGステータスでレコードを作成して処理完了後にOKに更新する
+    title,
+    description,
+    createdAt: createIso,
+    updatedAt: createIso,
+    width: processed.width,
+    height: processed.height,
+    bytes: processed.original.bytes,
+    blurHash: '',
+    palette: [],
+    GSI1PK: `USER#${userId}`,
+    GSI1SK: `WORK#${createIso}#${workId}`,
+    GSI2PK: 'FEED',
+    GSI3PK: `WORK_STATUS#SAVING`, // 保存完了後に属性ごと削除
+    GSI3SK: `WORK#${createIso}#${workId}`, // 保存完了後に属性ごと削除
+  }
+  await ddb.send(
+    new PutItemCommand({
+      TableName: table,
+      Item: marshall(workRecord),
+      ConditionExpression: 'attribute_not_exists(pk) AND attribute_not_exists(sk)',
+    }),
+  )
+
+  // MARK: write processed images
   await Promise.all([
     putS3Buffer({
       s3,
@@ -125,37 +151,31 @@ export const handler = privateApiHandler(async (event, auth) => {
     }),
   )
 
-  // MARK: create work record
-  const nowIso = new Date(nowUnix * 1000).toISOString()
-  const workRecord: WorkRecord = {
-    pk: `WORK#${workId}`,
-    sk: 'META',
-    type: 'WORK',
-    workId,
-    ownerId: userId,
-    title,
-    description,
-    createdAt: nowIso,
-    updatedAt: nowIso,
-    width: processed.width,
-    height: processed.height,
-    bytes: processed.original.bytes,
-    tags,
-    blurHash: '',
-    palette: [],
-    GSI1PK: `USER#${userId}`,
-    GSI1SK: `WORK#${nowIso}#${workId}`,
-    GSI2PK: 'FEED',
-  }
-
+  // MARK: set work record status to OK
+  const okIso = new Date().toISOString()
   await ddb.send(
-    new PutItemCommand({
+    new UpdateItemCommand({
       TableName: table,
-      Item: marshall(workRecord),
-      ConditionExpression: 'attribute_not_exists(pk) AND attribute_not_exists(sk)',
+      Key: marshall({ pk: workRecord.pk, sk: workRecord.sk }),
+      UpdateExpression: 'SET #status = :ok, updatedAt = :updatedAt REMOVE GSI3PK, GSI3SK', // GSI3は削除
+      ConditionExpression: 'attribute_exists(pk) AND attribute_exists(sk) AND #status = :saving',
+      ExpressionAttributeNames: {
+        '#status': 'status',
+      },
+      ExpressionAttributeValues: marshall({
+        ':ok': 'OK',
+        ':updatedAt': okIso,
+        ':saving': 'SAVING',
+      }),
     }),
   )
 
+  workRecord.status = 'OK'
+  workRecord.updatedAt = okIso
+  delete workRecord.GSI3PK
+  delete workRecord.GSI3SK
+
+  // アップロードセッション削除
   await ddb.send(
     new DeleteItemCommand({
       TableName: table,
@@ -166,19 +186,6 @@ export const handler = privateApiHandler(async (event, auth) => {
 
   const response: WorksUploadsFinalizeOk = {
     work: workRecord,
-    imageUrl: `${imageOrigin}/${imageKey}`,
   }
   return responseJson(200, response)
 })
-
-function normalizeTags(tags?: string[]): string[] {
-  if (!Array.isArray(tags)) return []
-  const unique = new Set<string>()
-  for (const tag of tags) {
-    const v = tag.trim()
-    if (!v) continue
-    if (v.length > WORK_TAG_MAX_LENGTH) continue
-    unique.add(v)
-  }
-  return [...unique]
-}

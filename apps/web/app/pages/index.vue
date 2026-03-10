@@ -20,13 +20,6 @@
         <UiButton v-else @click="managedLogout" :disabled="isLoading" size="large" :iconRight="LogOut">Logout</UiButton>
       </div>
     </section>
-    <section class="gc-section-framed">
-      <h3>3. 認証付き API を呼び出す</h3>
-      <p>サーバで発行したアクセスキーを使って認証付き API を呼び出します</p>
-      <div class="gc-actions gc-actions--left">
-        <UiButton @click="tryApi" :disabled="!user || isLoading" size="large">Try API</UiButton>
-      </div>
-    </section>
   </div>
 </template>
 
@@ -42,18 +35,4 @@ const managedLogout = inject(managedLogoutKey)
 
 const isActionLoading = ref(false)
 const isLoading = computed(() => isAuthLoading.value || isActionLoading.value)
-
-const tryApi = async () => {
-  isActionLoading.value = true
-  toast.loading('サーバと通信中', isActionLoading)
-  try {
-    const response = await api.postPrivateApiSample()
-    toast.success(`API Response: ${JSON.stringify(response)}`)
-  } catch (error) {
-    console.error('API call failed:', error)
-    toast.error('API call failed. Check console for details.')
-  } finally {
-    isActionLoading.value = false
-  }
-}
 </script>

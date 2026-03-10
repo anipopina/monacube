@@ -1,27 +1,25 @@
 <template>
-  <div class="lc-user-page">
-    <h2 class="gc-page-title"><User class="gc-icon gc-icon--title" /> User Profile</h2>
+  <div>
+    <h2 class="gc-page-title"><User class="gc-icon gc-icon--title" /> {{ userRecord?.userId }}</h2>
 
-    <section v-if="user" class="gc-section-framed lc-profile">
+    <section v-if="userRecord" class="gc-section-noframe lc-section-profile">
       <div class="lc-profile-head">
-        <img v-if="userIconUrl" class="lc-user-icon" :src="userIconUrl" :alt="`${user.name} icon`" loading="eager" />
-        <UiColoredAddrIcon v-else :address="user.userId" :size="72" :radius="12" />
+        <img v-if="userIconUrl" class="lc-user-icon" :src="userIconUrl" :alt="`${userRecord.name} icon`" loading="eager" />
+        <UiColoredAddrIcon v-else :address="userRecord.userId" :size="72" :radius="12" />
         <div class="lc-profile-texts">
-          <h3 class="lc-user-name">{{ user.name }}</h3>
-          <p class="lc-user-id">{{ user.userId }}</p>
+          <h3 class="lc-user-name">{{ userRecord.name }}</h3>
+          <p class="lc-user-bio">{{ userRecord.bio }}</p>
         </div>
       </div>
-
-      <p class="lc-user-bio">{{ user.bio || '自己紹介はまだ設定されていません。' }}</p>
     </section>
 
-    <section v-if="user" class="gc-section-framed">
+    <section v-if="userRecord" class="gc-section-framed lc-section-artworks">
       <div class="lc-section-header">
         <h3>Artworks</h3>
-        <p class="lc-count">{{ userWorks.length }} works</p>
+        <p v-if="userWorks" class="lc-count">{{ userWorks.length }} works</p>
       </div>
 
-      <div v-if="userWorks.length" class="lc-works-grid">
+      <div v-if="userWorks?.length" class="lc-works-grid">
         <NuxtLink v-for="work in userWorks" :key="work.workId" :to="`/works/${work.workId}`" class="lc-work-tile" :title="work.title">
           <img :src="toThumbUrl(work.workId)" :alt="work.title" loading="lazy" />
         </NuxtLink>
@@ -53,11 +51,11 @@ const { data, error } = await useAsyncData(
   { watch: [userId] },
 )
 
-const user = computed(() => data.value?.user)
-const userWorks = computed(() => data.value?.userWorks ?? [])
+const userRecord = computed(() => data.value?.user)
+const userWorks = computed(() => data.value?.userWorks ?? null)
 const userIconUrl = computed(() => {
-  if (!user.value?.iconKey) return ''
-  return `${runtimeConfig.public.imgBase}/${user.value.iconKey}`
+  if (!userRecord.value?.iconKey) return ''
+  return `${runtimeConfig.public.imgBase}/${userRecord.value.iconKey}`
 })
 
 watch(
@@ -68,11 +66,11 @@ watch(
   { immediate: true },
 )
 
-function toThumbUrl(workId: string): string {
+const toThumbUrl = (workId: string): string => {
   return workImageUrl(runtimeConfig.public.imgBase, workId, 'thumb')
 }
 
-function toNuxtError(error: unknown) {
+const toNuxtError = (error: unknown) => {
   const statusCode = getHttpErrorStatusCode(error)
   if (statusCode === 404) {
     return createError({ statusCode: 404, statusMessage: 'User not found' })
@@ -88,22 +86,21 @@ function toNuxtError(error: unknown) {
 </script>
 
 <style lang="scss" scoped>
-.lc-user-page {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+@use '@/assets/css/tokens' as tokens;
+
+.lc-section-profile {
+  margin-block: var(--space-6);
 }
 
-.lc-profile {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+.lc-section-artworks {
+  margin-block: var(--space-6);
+  padding-block: var(--space-4) var(--space-5);
 }
 
 .lc-profile-head {
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
+  align-items: flex-start;
+  gap: var(--space-5);
 }
 
 .lc-user-icon {
@@ -116,27 +113,23 @@ function toNuxtError(error: unknown) {
 
 .lc-profile-texts {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 .lc-user-name {
   margin: 0;
 }
 
-.lc-user-id {
-  margin: var(--space-1) 0 0;
-  color: var(--color-muted);
-  overflow-wrap: anywhere;
-}
-
 .lc-user-bio {
   margin: 0;
-  white-space: pre-wrap;
-  line-height: 1.7;
+  color: var(--color-muted);
 }
 
 .lc-section-header {
   display: flex;
-  align-items: baseline;
+  align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-2);
   margin-bottom: var(--space-3);
@@ -149,21 +142,19 @@ function toNuxtError(error: unknown) {
 .lc-count {
   margin: 0;
   color: var(--color-muted);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-md);
 }
 
 .lc-works-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: var(--space-1);
 }
 
 .lc-work-tile {
   aspect-ratio: 1 / 1;
   display: block;
-  // border-radius: var(--radius-md);
   overflow: hidden;
-  // border: 1px solid var(--color-border);
   background: var(--color-surface);
 
   img {
@@ -179,9 +170,9 @@ function toNuxtError(error: unknown) {
   color: var(--color-muted);
 }
 
-@media (max-width: 640px) {
+@media (max-width: tokens.$pagewidth-phone) {
   .lc-works-grid {
-    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   }
 }
 </style>

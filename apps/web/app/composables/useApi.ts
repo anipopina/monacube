@@ -2,12 +2,11 @@
 // APIの型付きラッパーを提供するcomposable
 
 import type {
-  HealthOk,
+  GetHealthOk,
   AuthChallengeReqBody,
   AuthChallengeOk,
   AuthVerifyReqBody,
   AuthVerifyOk,
-  PrivateApiSampleOk,
   WorksUploadsInitOk,
   WorksUploadsInitReqBody,
   WorksUploadsFinalizeReqBody,
@@ -16,6 +15,7 @@ import type {
   GetWorkOk,
   GetUserOk,
   GetWorksReqQuery,
+  GetMeTipsOk,
 } from '@shared/apiInterface'
 import { FetchError } from 'ofetch'
 
@@ -52,7 +52,7 @@ export const useApi = () => {
   // ----------------------------------------------------------------
 
   // GET /health
-  const getHealth = () => apiFetch<HealthOk>('/health')
+  const getHealth = () => apiFetch<GetHealthOk>('/health')
 
   // POST /auth/challenge
   const postAuthChallenge = (body: AuthChallengeReqBody) => apiFetch<AuthChallengeOk>('/auth/challenge', { method: 'POST', body })
@@ -73,9 +73,6 @@ export const useApi = () => {
   // MARK: Private endpoints (requires authentication)
   // ----------------------------------------------------------------
 
-  // POST /privateApiSample
-  const postPrivateApiSample = () => authedApiFetch<PrivateApiSampleOk>('/privateApiSample', { method: 'POST' })
-
   // POST /works/uploads/init
   const postWorksUploadsInit = (body: WorksUploadsInitReqBody) =>
     authedApiFetch<WorksUploadsInitOk>('/works/uploads/init', { method: 'POST', body })
@@ -84,6 +81,9 @@ export const useApi = () => {
   const postWorksUploadsFinalize = (body: WorksUploadsFinalizeReqBody) =>
     authedApiFetch<WorksUploadsFinalizeOk>('/works/uploads/finalize', { method: 'POST', body })
 
+  // GET /me/tips
+  const getMeTips = () => authedApiFetch<GetMeTipsOk>('/me/tips')
+
   return {
     getHealth,
     postAuthChallenge,
@@ -91,8 +91,8 @@ export const useApi = () => {
     getWorks,
     getWork,
     getUser,
-    postPrivateApiSample,
     postWorksUploadsInit,
     postWorksUploadsFinalize,
+    getMeTips,
   }
 }

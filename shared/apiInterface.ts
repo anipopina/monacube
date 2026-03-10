@@ -1,12 +1,12 @@
 // shared/apiInterface.ts
 // APIのリクエスト/レスポンス型定義
 
-import type { UserRecord, UserStatsRecord, WorkRecord } from './ddbRecord'
+import type { UserRecord, UserStatsRecord, WorkRecord, TipRecord } from './ddbRecord'
 
 // MARK: public API
 
 // GET /health
-export type HealthOk = { ok: true }
+export type GetHealthOk = { ok: true }
 
 // POST /auth/challenge
 export type AuthChallengeReqBody = {
@@ -56,12 +56,6 @@ export type GetUserOk = {
 
 // MARK: private API (認証が必要なAPI)
 
-// POST /privateApiSample
-export type PrivateApiSampleOk = {
-  ok: true
-  userId: string
-}
-
 // POST /works/uploads/init
 export type WorksUploadsInitReqBody = {
   contentType: string
@@ -83,9 +77,12 @@ export type WorksUploadsFinalizeReqBody = {
   uploadId: string
   title: string
   description: string
-  tags?: string[]
 }
 export type WorksUploadsFinalizeOk = {
   work: WorkRecord
-  imageUrl: string
+}
+
+// GET /me/tips
+export type GetMeTipsOk = {
+  tips: TipRecord[]
 }

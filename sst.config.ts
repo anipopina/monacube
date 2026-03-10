@@ -37,7 +37,7 @@ export default $config({
         },
         GSI2: {
           hashKey: 'GSI2PK',
-          rangeKey: 'GSI1SK',
+          rangeKey: 'GSI1SK', // GSI1とSK共有
         },
         GSI3: {
           hashKey: 'GSI3PK',
@@ -58,6 +58,13 @@ export default $config({
         allowMethods: ['GET', 'HEAD', 'PUT'],
         allowHeaders: ['*'],
       },
+      lifecycle: [
+        {
+          id: 'expire-uploads',
+          prefix: 'uploads/',
+          expiresIn: '1 day',
+        },
+      ],
     })
 
     const imageCdn = new sst.aws.Router('ImageCdn', {

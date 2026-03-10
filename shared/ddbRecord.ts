@@ -61,7 +61,7 @@ export type WorkRecord = DdbBaseRecord<'WORK', WorkPk, 'META'> & {
   height: number
   bytes: number
   blurHash: string
-  palette: unknown
+  thumbBHash: string
 
   GSI1PK: UserPk // GS1 for querying works by user
   GSI1SK: `WORK#${Iso8601String}#${string}` // format: WORK#<createdAt>#<workId> (also reused as GSI2 sort key)

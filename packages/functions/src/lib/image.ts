@@ -1,5 +1,5 @@
-import { DeleteObjectsCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import sharp from 'sharp'
+import { rgbaToThumbHash } from 'thumbhash'
 
 export const WORK_IMAGE_LARGE_MAX_EDGE = 1920
 export const WORK_IMAGE_MEDIUM_MAX_EDGE = 960
@@ -25,46 +25,6 @@ export class ImageProcessError extends Error {
     super(message)
     this.code = code
   }
-}
-
-export async function downloadS3ObjectAsBuffer(s3: S3Client, bucket: string, key: string): Promise<Buffer> {
-  const result = await s3.send(
-    new GetObjectCommand({
-      Bucket: bucket,
-      Key: key,
-    }),
-  )
-
-  if (!result.Body) {
-    throw new ImageProcessError('s3_object_missing_body', 'S3 object has no body')
-  }
-
-  const bytes = await result.Body.transformToByteArray()
-  return Buffer.from(bytes)
-}
-
-export async function putS3Buffer(params: { s3: S3Client; bucket: string; key: string; body: Buffer; contentType: string }): Promise<void> {
-  await params.s3.send(
-    new PutObjectCommand({
-      Bucket: params.bucket,
-      Key: params.key,
-      Body: params.body,
-      ContentType: params.contentType,
-    }),
-  )
-}
-
-export async function deleteS3Objects(params: { s3: S3Client; bucket: string; keys: string[] }): Promise<void> {
-  if (params.keys.length === 0) return
-
-  await params.s3.send(
-    new DeleteObjectsCommand({
-      Bucket: params.bucket,
-      Delete: {
-        Objects: params.keys.map((key) => ({ Key: key })),
-      },
-    }),
-  )
 }
 
 export async function processWorkImage(params: { source: Buffer; maxWidth: number; maxHeight: number }): Promise<ProcessedWorkImage> {
@@ -119,6 +79,16 @@ export async function processWorkImage(params: { source: Buffer; maxWidth: numbe
     mediumWebp,
     thumbWebp,
   }
+}
+
+export async function generateBlurHash(imageBuffer: Buffer): Promise<string> {
+  const preview = await sharp(imageBuffer)
+    .resize({ width: 32, height: 32, fit: 'inside', withoutEnlargement: true })
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true })
+  const blurHashBytes = rgbaToThumbHash(preview.info.width, preview.info.height, new Uint8Array(preview.data))
+  return Buffer.from(blurHashBytes).toString('base64')
 }
 
 function formatToContentType(format: string): string | null {

@@ -68,7 +68,7 @@ uploads/
 ### Delivery
 
 - original が 1MB 未満ならアートワーク詳細で original を表示 / 1MB以上なら large.webp を表示
-- blurHash でロード時間をつなぐ
+- blurHash, thumbBHash でロード時間をつなぐ
 
 ## Other Definition Files
 

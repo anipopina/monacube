@@ -3,7 +3,7 @@ import { DeleteItemCommand, GetItemCommand, UpdateItemCommand } from '@aws-sdk/c
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 
 import { ddb } from '../lib/ddb'
-import { deleteS3Objects } from '../lib/image'
+import { deleteS3Objects } from '../lib/s3'
 import { HttpError, mustGetEnv, privateApiHandler, responseJson } from '../lib/util'
 
 import type { WorkRecord } from '@shared/ddbRecord'
@@ -46,7 +46,7 @@ export const handler = privateApiHandler(async (event, auth) => {
     new UpdateItemCommand({
       TableName: table,
       Key: marshall({ pk: work.pk, sk: work.sk }),
-      UpdateExpression: 'SET #status = :deleting, GSI3PK = :gsi3pk, GSI3SK = :gsi3sk',
+      UpdateExpression: 'SET #status = :deleting, GSI3PK = :gsi3pk, GSI3SK = :gsi3sk', // GSI3を追加
       ConditionExpression: 'attribute_exists(pk) AND attribute_exists(sk) AND #status = :ok',
       ExpressionAttributeNames: {
         '#status': 'status',

@@ -47,19 +47,24 @@
 
     <section v-if="work" class="gc-section-noframe lc-work-actions">
       <div class="gc-actions gc-actions--left">
-        <UiButton variant="secondary" :iconRight="ExternalLink" @click="openOriginalImage"> View Original </UiButton>
+        <UiButton :iconRight="ExternalLink" @click="openOriginalImage"> View Original </UiButton>
+        <UiButton v-if="isOwner" variant="danger" :iconRight="Trash2" @click="deleteWork"> Delete Artwork </UiButton>
       </div>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ExternalLink } from 'lucide-vue-next'
+import { ExternalLink, Trash2 } from 'lucide-vue-next'
 import { formatBytes, formatIsoDate, getHttpErrorStatusCode, workImageUrl } from '@/lib/util'
 
 const route = useRoute()
+const router = useRouter()
+const { confirm } = useConfirm()
+const toast = useToast()
 const api = useApi()
 const runtimeConfig = useRuntimeConfig()
+const { user: authUser } = useWalletAuth()
 const workId = computed(() => String(route.params.workId || '').trim())
 
 const { data, error } = await useAsyncData(
@@ -77,6 +82,7 @@ const work = computed(() => {
   console.log('work:', data.value?.work)
   return data.value?.work
 })
+const isOwner = computed(() => authUser.value?.address === work.value?.ownerId)
 const workOriginalImageUrl = computed(() => {
   if (!work.value) return ''
   return workImageUrl(runtimeConfig.public.imgBase, work.value.workId, 'original')
@@ -116,6 +122,18 @@ const openOriginalImage = () => {
   if (!workOriginalImageUrl.value) return
   window.open(workOriginalImageUrl.value, '_blank')
 }
+
+const deleteWork = async () => {
+  if (!(await confirm('この作品を削除してもよろしいですか？\nこの操作は元に戻せません', { okVariant: 'danger' }))) return
+  try {
+    await api.deleteWork(workId.value)
+    toast.success('作品を削除しました')
+    router.push(`/me`)
+  } catch (error) {
+    console.error('Artwork deletion failed:', error)
+    toast.error('作品の削除に失敗しました')
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -128,10 +146,11 @@ const openOriginalImage = () => {
 }
 
 .lc-work-meta {
-  padding-top: var(--space-5);
+  margin-top: var(--space-8);
 }
 
 .lc-work-actions {
+  margin-top: var(--space-6);
 }
 
 .lc-media-wrap {

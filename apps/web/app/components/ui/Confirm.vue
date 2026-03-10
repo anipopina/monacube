@@ -9,7 +9,7 @@
           <UiButton @click="handleCancel" variant="secondary"> キャンセル </UiButton>
         </div>
         <div class="lc-button">
-          <UiButton @click="handleConfirm" variant="primary"> OK </UiButton>
+          <UiButton @click="handleConfirm" :variant="confirmOkVariant"> OK </UiButton>
         </div>
       </div>
     </div>
@@ -19,7 +19,7 @@
 <script setup lang="ts">
 import { CSS_TOKENS } from '@/lib/util'
 
-const { confirmMessage, isConfirmOpen, handleConfirmResponse } = useConfirm()
+const { confirmMessage, confirmOkVariant, isConfirmOpen, handleConfirmResponse } = useConfirm()
 
 const dialogRef = ref<HTMLDialogElement | null>(null)
 const isOpen = ref(false)

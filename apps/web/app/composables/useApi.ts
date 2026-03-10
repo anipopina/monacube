@@ -81,6 +81,9 @@ export const useApi = () => {
   const postWorksUploadsFinalize = (body: WorksUploadsFinalizeReqBody) =>
     authedApiFetch<WorksUploadsFinalizeOk>('/works/uploads/finalize', { method: 'POST', body })
 
+  // DELETE /works/{workId}
+  const deleteWork = (workId: string) => authedApiFetch(`/works/${workId}`, { method: 'DELETE' })
+
   // GET /me/tips
   const getMeTips = () => authedApiFetch<GetMeTipsOk>('/me/tips')
 
@@ -93,6 +96,7 @@ export const useApi = () => {
     getUser,
     postWorksUploadsInit,
     postWorksUploadsFinalize,
+    deleteWork,
     getMeTips,
   }
 }

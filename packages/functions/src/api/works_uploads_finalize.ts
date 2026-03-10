@@ -15,7 +15,8 @@ import {
   WORK_TITLE_MAX_LENGTH,
   workId2imageKey,
 } from '@shared/const'
-import { downloadS3ObjectAsBuffer, ImageProcessError, processWorkImage, putS3Buffer } from '../lib/image'
+import { ImageProcessError, processWorkImage, generateBlurHash } from '../lib/image'
+import { downloadS3ObjectAsBuffer, putS3Buffer } from '../lib/s3'
 
 const s3 = new S3Client({})
 
@@ -72,7 +73,10 @@ export const handler = privateApiHandler(async (event, auth) => {
     if (error instanceof ImageProcessError) throw new HttpError(400, { error: error.code })
     throw error
   }
-  // TODO: blurHashやパレットの生成
+
+  // blurHash生成
+  const blurHash = await generateBlurHash(processed.mediumWebp)
+  const thumbBHash = await generateBlurHash(processed.thumbWebp)
 
   const workId = ulid()
   const imageKey = workId2imageKey(workId, 'original')
@@ -80,6 +84,7 @@ export const handler = privateApiHandler(async (event, auth) => {
   const mediumWebpKey = workId2imageKey(workId, 'medium')
   const thumbWebpKey = workId2imageKey(workId, 'thumb')
 
+  // MARK: create work record
   const createIso = new Date().toISOString()
   const workRecord: WorkRecord = {
     pk: `WORK#${workId}`,
@@ -95,8 +100,8 @@ export const handler = privateApiHandler(async (event, auth) => {
     width: processed.width,
     height: processed.height,
     bytes: processed.original.bytes,
-    blurHash: '',
-    palette: [],
+    blurHash,
+    thumbBHash,
     GSI1PK: `USER#${userId}`,
     GSI1SK: `WORK#${createIso}#${workId}`,
     GSI2PK: 'FEED',
@@ -170,6 +175,7 @@ export const handler = privateApiHandler(async (event, auth) => {
     }),
   )
 
+  // レスポンス用にworkRecordも更新
   workRecord.status = 'OK'
   workRecord.updatedAt = okIso
   delete workRecord.GSI3PK

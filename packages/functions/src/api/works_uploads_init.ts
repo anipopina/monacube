@@ -39,7 +39,7 @@ export const handler = privateApiHandler(async (event, auth) => {
   }
 
   const uploadId = ulid()
-  const s3Key = `works/uploads/${uploadId}/tmp`
+  const s3Key = `uploads/${uploadId}/tmp`
 
   const now = Math.floor(Date.now() / 1000)
   const ttl = now + UPLOAD_EXPIRES_IN_SEC

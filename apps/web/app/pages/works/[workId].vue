@@ -42,6 +42,10 @@
           <dt>Original Size</dt>
           <dd>{{ formatBytes(work.bytes) }}</dd>
         </div>
+        <div class="lc-meta-row">
+          <dt>Content Type</dt>
+          <dd>{{ work.normalized ? 'image/webp (normalized)' : work.uploadCType }}</dd>
+        </div>
       </dl>
     </section>
 

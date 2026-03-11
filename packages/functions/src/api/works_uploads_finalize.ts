@@ -53,14 +53,18 @@ export const handler = privateApiHandler(async (event, auth) => {
 
   // MARK: uploaded object validation + processing
   let uploadedObject: Buffer
+  let uploadedCType = ''
   try {
-    uploadedObject = await downloadS3ObjectAsBuffer(s3, bucket, upload.s3Key)
+    const downloaded = await downloadS3ObjectAsBuffer(s3, bucket, upload.s3Key)
+    uploadedObject = downloaded.body
+    uploadedCType = (downloaded.contentType || '').split(';')[0].trim().toLowerCase()
   } catch {
     throw new HttpError(400, { error: 'upload_object_not_found' })
   }
 
   const objectBytes = uploadedObject.byteLength
   if (!objectBytes || objectBytes > upload.declaredBytes) throw new HttpError(400, { error: 'invalid_object_size' })
+  if (!uploadedCType || uploadedCType !== upload.contentType) throw new HttpError(400, { error: 'invalid_object_content_type' })
 
   let processed
   try {
@@ -100,6 +104,8 @@ export const handler = privateApiHandler(async (event, auth) => {
     width: processed.width,
     height: processed.height,
     bytes: processed.original.bytes,
+    uploadCType: uploadedCType,
+    normalized: processed.original.normalized,
     blurHash,
     thumbBHash,
     GSI1PK: `USER#${userId}`,

@@ -1,19 +1,24 @@
 import { DeleteObjectsCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 
-export async function downloadS3ObjectAsBuffer(s3: S3Client, bucket: string, key: string): Promise<Buffer> {
+export async function downloadS3ObjectAsBuffer(
+  s3: S3Client,
+  bucket: string,
+  key: string,
+): Promise<{ body: Buffer; contentType: string | null }> {
   const result = await s3.send(
     new GetObjectCommand({
       Bucket: bucket,
       Key: key,
     }),
   )
-
-  if (!result.Body) {
-    throw new Error('S3 object has no body')
-  }
+  if (!result.Body) throw new Error('S3 object has no body')
 
   const bytes = await result.Body.transformToByteArray()
-  return Buffer.from(bytes)
+
+  return {
+    body: Buffer.from(bytes),
+    contentType: result.ContentType ?? null,
+  }
 }
 
 export async function putS3Buffer(params: { s3: S3Client; bucket: string; key: string; body: Buffer; contentType: string }): Promise<void> {

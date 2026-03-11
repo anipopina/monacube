@@ -60,6 +60,8 @@ export type WorkRecord = DdbBaseRecord<'WORK', WorkPk, 'META'> & {
   width: number
   height: number
   bytes: number
+  uploadCType: string // contentType of uploaded image
+  normalized: boolean // whether the original image has been normalized (EXIF removed, color profile converted)
   blurHash: string
   thumbBHash: string
 

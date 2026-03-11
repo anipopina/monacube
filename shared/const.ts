@@ -19,3 +19,11 @@ export const workId2imageKey = (workId: string, size: 'original' | 'large' | 'me
       throw new Error('Invalid image size')
   }
 }
+
+// BASE_DAYS日後に0-1日ランダム加算した日時を返す
+export const getNextMonaCheckIso = () => {
+  const BASE_DAYS = 10
+  // TODO: ユーザのアクティブ度にあわせて調整
+  const nextCheckUnix = Math.floor(Date.now() / 1000) + Math.floor(BASE_DAYS + Math.random()) * 24 * 60 * 60
+  return new Date(nextCheckUnix * 1000).toISOString()
+}

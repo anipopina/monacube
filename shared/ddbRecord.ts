@@ -18,11 +18,16 @@ export type DdbPk = string
 export type DdbSk = string
 
 export type Iso8601String = string
+export type ContentType = string
+export type Ulid = string
+export type Hex = string
+export type MonaAddress = string
+export type UnixTimestamp = number
 
-export type UserPk = `USER#${string}`
-export type WorkPk = `WORK#${string}`
-export type NoncePk = `NONCE#${string}`
-export type UploadPk = `UPLOAD#${string}`
+export type UserPk = `USER#${MonaAddress}`
+export type WorkPk = `WORK#${Ulid}`
+export type NoncePk = `NONCE#${Hex}`
+export type UploadPk = `UPLOAD#${Ulid}`
 
 export type DdbEntityType = 'USER' | 'USER_STATS' | 'WORK' | 'TIP' | 'NONCE' | 'UPLOAD'
 
@@ -30,11 +35,11 @@ export type DdbBaseRecord<TType extends DdbEntityType, TPk extends DdbPk = DdbPk
   pk: TPk
   sk: TSk
   type: TType
-  ttl?: number // epoch seconds; set only for records that should expire automatically
+  ttl?: UnixTimestamp // epoch seconds; set only for records that should expire automatically
 }
 
 export type UserRecord = DdbBaseRecord<'USER', UserPk, 'PROFILE'> & {
-  userId: string // monacoin address
+  userId: MonaAddress // monacoin address
   name: string
   bio: string
   iconKey?: string // s3 key (usually "users/<userId>/icon")
@@ -46,12 +51,19 @@ export type UserRecord = DdbBaseRecord<'USER', UserPk, 'PROFILE'> & {
 export type UserStatsRecord = DdbBaseRecord<'USER_STATS', UserPk, 'STATS'> & {
   balanceSat: number
   lastLoginAt: Iso8601String
+  totalBytes: number // total bytes of all works owned by the user
+  workCount: number
+  monaCheckedAt: Iso8601String // last time the user's balance was checked on the blockchain
+  monaNextChkAt: Iso8601String // when the next balance check should be performed; used to stagger balance checks for many users and avoid spikes in blockchain queries
+
+  GSI1PK: 'MONA_CHECK' // GSI for querying users by monaNextChkAt
+  GSI1SK: `USER_STATS#${Iso8601String}` // format: USER_STATS#<monaNextChkAt>
 }
 
 export type WorkStatus = 'SAVING' | 'OK' | 'DELETING'
 export type WorkRecord = DdbBaseRecord<'WORK', WorkPk, 'META'> & {
-  workId: string // ULID
-  ownerId: string
+  workId: Ulid
+  ownerId: MonaAddress
   status: WorkStatus
   title: string
   description: string
@@ -60,39 +72,40 @@ export type WorkRecord = DdbBaseRecord<'WORK', WorkPk, 'META'> & {
   width: number
   height: number
   bytes: number
-  uploadCType: string // contentType of uploaded image
+  uploadCType: ContentType // contentType of uploaded image
   normalized: boolean // whether the original image has been normalized (EXIF removed, color profile converted)
   blurHash: string
   thumbBHash: string
 
-  GSI1PK: UserPk // GS1 for querying works by user
-  GSI1SK: `WORK#${Iso8601String}#${string}` // format: WORK#<createdAt>#<workId> (also reused as GSI2 sort key)
+  GSI1PK: UserPk // GSI for querying works by user
+  GSI1SK: `WORK#${Iso8601String}#${Ulid}` // format: WORK#<createdAt>#<workId>
 
-  GSI2PK: 'FEED' // GS2 for querying works for feed; sort key is the same as GSI1SK to allow sorting by createdAt
+  GSI2PK: 'FEED' // GSI for querying works for feed
+  GSI2SK: `WORK#${Iso8601String}#${Ulid}` // format: WORK#<createdAt>#<workId>
 
-  GSI3PK?: `WORK_STATUS#${WorkStatus}` // GS3 for querying works by status; optional since it's only needed for non-OK statuses
-  GSI3SK?: `WORK#${Iso8601String}#${string}` // format: WORK#<statusUpdatedAt>#<workId>
+  GSI3PK?: `WORK_STATUS#${WorkStatus}` // GSI for querying works by status; optional since it's only needed for non-OK statuses
+  GSI3SK?: `WORK#${Iso8601String}#${Ulid}` // format: WORK#<statusUpdatedAt>#<workId>
 }
 
 // tip record for each user to display history
 // since the exact history can be checked on the block explorer, the integrity of this record can be relaxed.
 // denormalized for both sender and receiver to simplify querying; one tip tx corresponds to two records with isIn differentiating direction
 // sk format: TIP#<time>#<txIdFirst16> (time is used for sorting; txId is used for deduplication in case of retries)
-export type TipRecord = DdbBaseRecord<'TIP', UserPk, `TIP#${Iso8601String}#${string}`> & {
-  txId: string
+export type TipRecord = DdbBaseRecord<'TIP', UserPk, `TIP#${Iso8601String}#${Hex}`> & {
+  txId: Hex
   time: Iso8601String
   isIn: boolean // true for receiver's record, false for sender's record
-  fromAddr: string // sender userId
-  toAddr: string // receiver userId
+  fromAddr: MonaAddress // sender userId
+  toAddr: MonaAddress // receiver userId
   amountSat: number
-  workId?: string // present when tipping a work
+  workId?: Ulid // present when tipping a work
   message?: string
 }
 
 // nonce record for auth challenge session
 export type NonceRecord = DdbBaseRecord<'NONCE', NoncePk, 'CHALLENGE'> & {
-  ttl: number
-  address: string
+  ttl: UnixTimestamp
+  address: MonaAddress
   message: string
   createdAt: Iso8601String
   usedAt?: Iso8601String
@@ -101,11 +114,11 @@ export type NonceRecord = DdbBaseRecord<'NONCE', NoncePk, 'CHALLENGE'> & {
 // upload record for content upload session
 export type UploadKind = 'WORK_IMAGE' | 'USER_ICON'
 export type UploadRecord = DdbBaseRecord<'UPLOAD', UploadPk, 'META'> & {
-  ttl: number
-  userId: string
+  ttl: UnixTimestamp
+  userId: MonaAddress
   kind: UploadKind
   s3Key: string
-  contentType: string
+  contentType: ContentType
   declaredBytes: number
 }
 

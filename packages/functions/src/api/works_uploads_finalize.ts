@@ -111,6 +111,7 @@ export const handler = privateApiHandler(async (event, auth) => {
     GSI1PK: `USER#${userId}`,
     GSI1SK: `WORK#${createIso}#${workId}`,
     GSI2PK: 'FEED',
+    GSI2SK: `WORK#${createIso}#${workId}`,
     GSI3PK: `WORK_STATUS#SAVING`, // 保存完了後に属性ごと削除
     GSI3SK: `WORK#${createIso}#${workId}`, // 保存完了後に属性ごと削除
   }

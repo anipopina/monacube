@@ -20,11 +20,25 @@
         </div>
       </div>
     </section>
+    <section class="gc-section-framed">
+      <h3>Authentication</h3>
+      <div class="lc-settings-group">
+        <div class="lc-setting-item">
+          <div class="lc-setting-info">
+            <div class="lc-setting-label">New Passkey</div>
+            <div class="lc-setting-description">Create a passkey for a new account</div>
+          </div>
+          <UiButton @click="managedCreatePasskey" :iconRight="KeyRound">Create Passkey</UiButton>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Settings } from 'lucide-vue-next'
+import { Settings, KeyRound } from 'lucide-vue-next'
+import { managedCreatePasskeyKey } from '@/lib/injectionKeys'
+const managedCreatePasskey = inject(managedCreatePasskeyKey)
 
 const { colorMode, isDark, setColorMode } = useColorMode()
 

@@ -26,6 +26,7 @@ export default $config({
         GSI1PK: 'string',
         GSI1SK: 'string',
         GSI2PK: 'string',
+        GSI2SK: 'string',
         GSI3PK: 'string',
         GSI3SK: 'string',
       },
@@ -37,7 +38,7 @@ export default $config({
         },
         GSI2: {
           hashKey: 'GSI2PK',
-          rangeKey: 'GSI1SK', // GSI1とSK共有
+          rangeKey: 'GSI2SK',
         },
         GSI3: {
           hashKey: 'GSI3PK',

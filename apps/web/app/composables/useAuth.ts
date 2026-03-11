@@ -4,6 +4,7 @@ import type { AuthChallengeReqBody, AuthChallengeOk, AuthVerifyReqBody, AuthVeri
 import type { UserRecord, UserStatsRecord } from '@shared/ddbRecord'
 
 const STOREKEY_AUTH_USER = 'auth_user'
+const STOREKEY_AUTH_ISNEW = 'auth_isnew'
 
 interface AuthUser {
   address: string
@@ -18,26 +19,8 @@ export const useAuth = () => {
   const apiBase = config.public.apiBase
 
   const user = useState<AuthUser | null>('auth:user', () => null)
-
-  const load = () => {
-    if (user.value) return
-    const stored = localStorage.getItem(STOREKEY_AUTH_USER)
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored) as AuthUser
-        // 有効期限チェック
-        const now = Math.floor(Date.now() / 1000)
-        if (parsed.expiresAt > now) {
-          user.value = parsed
-        } else {
-          // 期限切れなら削除
-          localStorage.removeItem(STOREKEY_AUTH_USER)
-        }
-      } catch {
-        localStorage.removeItem(STOREKEY_AUTH_USER)
-      }
-    }
-  }
+  const isNew = useState<boolean>('auth:isNew', () => true)
+  const initialized = useState<boolean>('auth:initialized', () => false)
 
   /**
    * チャレンジを取得（署名用のメッセージとnonceを取得）
@@ -73,8 +56,10 @@ export const useAuth = () => {
       userRecord: response.user,
       userStatsRecord: response.userStats,
     }
+    isNew.value = false
     // トークンをlocalStorageに保存
     localStorage.setItem(STOREKEY_AUTH_USER, JSON.stringify(user.value))
+    localStorage.setItem(STOREKEY_AUTH_ISNEW, 'false')
   }
 
   /**
@@ -85,10 +70,36 @@ export const useAuth = () => {
     localStorage.removeItem(STOREKEY_AUTH_USER)
   }
 
-  load()
+  const init = () => {
+    // skip if already initialized
+    if (initialized.value) return
+    initialized.value = true
+
+    const stored = localStorage.getItem(STOREKEY_AUTH_USER)
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as AuthUser
+        // 有効期限チェック
+        const now = Math.floor(Date.now() / 1000)
+        if (parsed.expiresAt > now) {
+          user.value = parsed
+        } else {
+          // 期限切れなら削除
+          localStorage.removeItem(STOREKEY_AUTH_USER)
+        }
+      } catch {
+        localStorage.removeItem(STOREKEY_AUTH_USER)
+      }
+    }
+
+    isNew.value = localStorage.getItem(STOREKEY_AUTH_ISNEW) !== 'false'
+  }
+
+  init()
 
   return {
     user: readonly(user),
+    isNew: readonly(isNew),
     getChallenge,
     login,
     logout,

@@ -8,6 +8,7 @@ import type { NonceRecord, UserRecord, UserStatsRecord } from '@shared/ddbRecord
 import { apiHandler, HttpError, jwtSecretKey, mustGetEnv, normalizeAddress, responseJson, parseEventBody } from '../lib/util'
 import { ddb } from '../lib/ddb'
 import { verifySignature } from '../lib/monacoin'
+import { getNextMonaCheckIso } from '@shared/const'
 
 const ACCESS_TOKEN_EXPIRES_IN_SEC = 15 * 60 // 15分
 
@@ -77,6 +78,7 @@ export const handler = apiHandler(async (event) => {
 
     if (!ddbResUser.Item) {
       // なければ USER, USER_STATS を新規作成
+      const monaNextCheckIso = getNextMonaCheckIso()
       userRecord = {
         pk: `USER#${address}`,
         sk: 'PROFILE',
@@ -93,6 +95,12 @@ export const handler = apiHandler(async (event) => {
         type: 'USER_STATS',
         balanceSat: 0,
         lastLoginAt: nowIso,
+        totalBytes: 0,
+        workCount: 0,
+        monaCheckedAt: new Date(0).toISOString(), // クライアントから手動更新できるように初期値は過去日時
+        monaNextChkAt: monaNextCheckIso,
+        GSI1PK: 'MONA_CHECK',
+        GSI1SK: `USER_STATS#${monaNextCheckIso}`,
       }
       await ddb.send(
         new TransactWriteItemsCommand({

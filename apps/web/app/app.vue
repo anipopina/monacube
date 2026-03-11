@@ -7,7 +7,6 @@
 
     <template #nav>
       <NuxtLink to="/items/__ID__" class="gc-only-desktop">Items</NuxtLink>
-      <NuxtLink to="/works/__WORK_ID__" class="gc-only-desktop">WorkItem</NuxtLink>
       <NuxtLink to="/users/M8KAtuA3xWGLhsjim81uPv1uBQMyatJMW5" class="gc-only-desktop">User1</NuxtLink>
       <NuxtLink to="/users/MET11NjMLWS6qrf6bV4gscWW2B1WSV4QVp" class="gc-only-desktop">User2</NuxtLink>
       <NuxtLink to="/about" class="gc-only-desktop">About</NuxtLink>
@@ -81,7 +80,7 @@ const managedLogin = async () => {
       return
     } else {
       console.error('Login failed:', error)
-      toast.error(`ログインに失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}`, 10_000)
+      toast.error(`ログインに失敗しました`, 10_000)
     }
   }
 }

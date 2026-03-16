@@ -20,12 +20,14 @@
       </section>
     </section>
 
-    <section v-if="works" class="lc-section-artworks">
-      <div class="lc-works-grid">
-        <NuxtLink v-for="work in works" :key="work.workId" :to="`/works/${work.workId}`" class="lc-work-tile" :title="work.title">
+    <section class="lc-section-artworks">
+      <div v-if="works" class="gc-works-grid">
+        <NuxtLink v-for="work in works" :key="work.workId" :to="`/works/${work.workId}`" class="gc-work-tile" :title="work.title">
           <img :src="toThumbUrl(work.workId)" :alt="work.title" loading="lazy" />
         </NuxtLink>
       </div>
+
+      <div v-else class="gc-works-loading"><UiLoadingOverlay :show="!works" /></div>
     </section>
   </div>
 </template>
@@ -46,11 +48,11 @@ const managedLogin = inject(managedLoginKey)
 const isActionLoading = ref(false)
 const isLoading = computed(() => isAuthLoading.value || isActionLoading.value)
 
-const { data, error } = await useAsyncData('works-home', async () => {
+const { data, error } = useAsyncData('works-home', async () => {
   return api.getWorks()
 })
 
-const works = computed(() => data.value?.works ?? [])
+const works = computed(() => data.value?.works ?? null)
 
 watch(
   error,
@@ -83,25 +85,5 @@ const toNuxtError = (error: unknown) => {
 
 .lc-section-artworks {
   margin-block: var(--space-3);
-}
-
-.lc-works-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: var(--space-1);
-}
-
-.lc-work-tile {
-  aspect-ratio: 1 / 1;
-  display: block;
-  overflow: hidden;
-  background: var(--color-surface);
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
 }
 </style>

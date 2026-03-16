@@ -6,7 +6,6 @@
     </template>
 
     <template #nav>
-      <NuxtLink to="/items/__ID__" class="gc-only-desktop">Items</NuxtLink>
       <NuxtLink to="/users/M8KAtuA3xWGLhsjim81uPv1uBQMyatJMW5" class="gc-only-desktop">User1</NuxtLink>
       <NuxtLink to="/users/MET11NjMLWS6qrf6bV4gscWW2B1WSV4QVp" class="gc-only-desktop">User2</NuxtLink>
       <NuxtLink to="/about" class="gc-only-desktop">About</NuxtLink>
@@ -23,7 +22,6 @@
 
       <UiHamburger class="gc-only-mobile">
         <NuxtLink to="/">Home</NuxtLink>
-        <NuxtLink to="/items/__ID__">Items</NuxtLink>
         <NuxtLink to="/about">About</NuxtLink>
         <NuxtLink to="/settings"><Settings class="gc-icon gc-icon--small" aria-label="Settings" /></NuxtLink>
         <span><!-- spacer --></span>

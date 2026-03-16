@@ -74,3 +74,16 @@ uploads/
 
 - API Interface: shared/apiInterface.ts
 - DynamoDB Record: shared/ddbRecord.ts
+
+## TODO
+
+- blurHash表示
+- Tip機能
+- Tip履歴表示
+- Aboutページ
+- 利用規約への署名の管理
+- MONA高の定期更新+手動更新の実装
+- MONA高によるクォータ
+- アートワーク編集機能
+- プロフィール編集機能+アイコンアップロード
+- Adminアカウントの定義と専用UI追加

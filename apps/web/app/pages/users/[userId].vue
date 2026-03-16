@@ -19,8 +19,8 @@
         <p v-if="userWorks" class="lc-count">{{ userWorks.length }} works</p>
       </div>
 
-      <div v-if="userWorks?.length" class="lc-works-grid">
-        <NuxtLink v-for="work in userWorks" :key="work.workId" :to="`/works/${work.workId}`" class="lc-work-tile" :title="work.title">
+      <div v-if="userWorks?.length" class="gc-works-grid">
+        <NuxtLink v-for="work in userWorks" :key="work.workId" :to="`/works/${work.workId}`" class="gc-work-tile" :title="work.title">
           <img :src="toThumbUrl(work.workId)" :alt="work.title" loading="lazy" />
         </NuxtLink>
       </div>
@@ -145,34 +145,8 @@ const toNuxtError = (error: unknown) => {
   font-size: var(--font-size-md);
 }
 
-.lc-works-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: var(--space-1);
-}
-
-.lc-work-tile {
-  aspect-ratio: 1 / 1;
-  display: block;
-  overflow: hidden;
-  background: var(--color-surface);
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-}
-
 .lc-empty {
   margin: 0;
   color: var(--color-muted);
-}
-
-@media (max-width: tokens.$pagewidth-phone) {
-  .lc-works-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  }
 }
 </style>

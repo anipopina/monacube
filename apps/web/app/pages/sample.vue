@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h2 class="gc-page-title">Item {{ itemID }}</h2>
+    <h2 class="gc-page-title">UI Samples</h2>
     <section class="gc-section-framed">
       <p>This page will be displayed at the /items/[item_id]</p>
     </section>
@@ -166,14 +166,11 @@
 <script setup lang="ts">
 import { Settings } from 'lucide-vue-next'
 
-const route = useRoute()
 const { confirm } = useConfirm()
 const toast = useToast()
 
 const isToastLoading = ref(false)
 const isSwitchOn = ref(false)
-
-const itemID = route.params.item_id
 
 const showToastSuccess = (message: string) => {
   toast.success(message)

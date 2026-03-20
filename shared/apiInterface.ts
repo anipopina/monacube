@@ -52,6 +52,10 @@ export type GetWorkOk = {
 export type GetUserOk = {
   user: UserRecord
   userWorks: WorkRecord[]
+  userStats?: UserStatsRecord
+}
+export type GetUserReqQuery = {
+  withStats?: boolean // whether to include userStats in the response; defaults to false
 }
 
 // MARK: private API (認証が必要なAPI)

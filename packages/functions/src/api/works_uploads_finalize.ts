@@ -1,5 +1,5 @@
 import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3'
-import { DeleteItemCommand, GetItemCommand, PutItemCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb'
+import { DeleteItemCommand, GetItemCommand, PutItemCommand, TransactWriteItemsCommand } from '@aws-sdk/client-dynamodb'
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 import { ulid } from 'ulid'
 
@@ -166,19 +166,37 @@ export const handler = privateApiHandler(async (event, auth) => {
   // MARK: set work record status to OK
   const okIso = new Date().toISOString()
   await ddb.send(
-    new UpdateItemCommand({
-      TableName: table,
-      Key: marshall({ pk: workRecord.pk, sk: workRecord.sk }),
-      UpdateExpression: 'SET #status = :ok, updatedAt = :updatedAt REMOVE GSI3PK, GSI3SK', // GSI3は削除
-      ConditionExpression: 'attribute_exists(pk) AND attribute_exists(sk) AND #status = :saving',
-      ExpressionAttributeNames: {
-        '#status': 'status',
-      },
-      ExpressionAttributeValues: marshall({
-        ':ok': 'OK',
-        ':updatedAt': okIso,
-        ':saving': 'SAVING',
-      }),
+    new TransactWriteItemsCommand({
+      TransactItems: [
+        {
+          Update: {
+            TableName: table,
+            Key: marshall({ pk: workRecord.pk, sk: workRecord.sk }),
+            UpdateExpression: 'SET #status = :ok, updatedAt = :updatedAt REMOVE GSI3PK, GSI3SK', // GSI3は削除
+            ConditionExpression: 'attribute_exists(pk) AND attribute_exists(sk) AND #status = :saving',
+            ExpressionAttributeNames: {
+              '#status': 'status',
+            },
+            ExpressionAttributeValues: marshall({
+              ':ok': 'OK',
+              ':updatedAt': okIso,
+              ':saving': 'SAVING',
+            }),
+          },
+        },
+        {
+          Update: {
+            TableName: table,
+            Key: marshall({ pk: `USER#${userId}`, sk: 'STATS' }),
+            UpdateExpression: 'SET totalBytes = totalBytes + :bytesInc, workCount = workCount + :workCountInc',
+            ConditionExpression: 'attribute_exists(pk) AND attribute_exists(sk)',
+            ExpressionAttributeValues: marshall({
+              ':bytesInc': processed.original.bytes,
+              ':workCountInc': 1,
+            }),
+          },
+        },
+      ],
     }),
   )
 

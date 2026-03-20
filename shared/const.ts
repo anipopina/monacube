@@ -27,3 +27,9 @@ export const getNextMonaCheckIso = () => {
   const nextCheckUnix = Math.floor(Date.now() / 1000) + Math.floor(BASE_DAYS + Math.random()) * 24 * 60 * 60
   return new Date(nextCheckUnix * 1000).toISOString()
 }
+
+export const getQuota = (monaSat: number): { bytes: number; count: number } => {
+  const count = Math.floor(monaSat / 10_000_000) // 0.1MONAあたり1枚
+  const bytes = count * 1024 * 1024 // 0.1MONAあたり1MB
+  return { bytes, count }
+}

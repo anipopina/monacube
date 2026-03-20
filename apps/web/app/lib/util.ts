@@ -26,6 +26,11 @@ export const formatBalance = (balance: number, accurate: boolean = false): strin
   return afterDot ? `${beforeDot}.${afterDot}` : beforeDot
 }
 
+export const formatBalanceSat = (balanceSat: number, accurate: boolean = false): string => {
+  const balance = balanceSat / 100_000_000
+  return formatBalance(balance, accurate)
+}
+
 export const formatIsoDate = (iso: string, locale: string = 'ja-JP'): string => {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return iso

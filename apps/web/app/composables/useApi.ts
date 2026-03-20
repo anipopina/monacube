@@ -16,6 +16,7 @@ import type {
   GetUserOk,
   GetWorksReqQuery,
   GetMeTipsOk,
+  GetUserReqQuery,
 } from '@shared/apiInterface'
 import { FetchError } from 'ofetch'
 
@@ -67,7 +68,7 @@ export const useApi = () => {
   const getWork = (workId: string) => apiFetch<GetWorkOk>(`/works/${workId}`)
 
   // GET /users/{userId}
-  const getUser = (userId: string) => apiFetch<GetUserOk>(`/users/${userId}`)
+  const getUser = (userId: string, query?: GetUserReqQuery) => apiFetch<GetUserOk>(`/users/${userId}`, { method: 'GET', query })
 
   // ----------------------------------------------------------------
   // MARK: Private endpoints (requires authentication)

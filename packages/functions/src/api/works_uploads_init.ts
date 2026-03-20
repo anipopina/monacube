@@ -1,13 +1,13 @@
 import { HttpError, mustGetEnv, privateApiHandler, responseJson, parseEventBody } from '../lib/util'
-import { PutItemCommand } from '@aws-sdk/client-dynamodb'
-import { marshall } from '@aws-sdk/util-dynamodb'
+import { GetItemCommand, PutItemCommand } from '@aws-sdk/client-dynamodb'
+import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { ulid } from 'ulid'
 
 import type { WorksUploadsInitOk, WorksUploadsInitReqBody } from '@shared/apiInterface'
-import type { UploadRecord } from '@shared/ddbRecord'
-import { WORK_IMAGE_ALLOWEDCONTENTTYPES, WORK_IMAGE_MAX_BYTES } from '@shared/const'
+import type { UploadRecord, UserStatsRecord } from '@shared/ddbRecord'
+import { getQuota, WORK_IMAGE_ALLOWEDCONTENTTYPES, WORK_IMAGE_MAX_BYTES } from '@shared/const'
 
 import { ddb } from '../lib/ddb'
 
@@ -34,9 +34,22 @@ export const handler = privateApiHandler(async (event, auth) => {
     throw new HttpError(400, { error: 'invalid_declared_bytes' })
   }
   if (declaredBytes > WORK_IMAGE_MAX_BYTES) {
-    // TODO: MONA高による制限を実装した後は動的な値で制限する
     throw new HttpError(400, { error: 'too_large_declared_bytes' })
   }
+
+  // Fetch userStats to check quota
+  const ddbResUserStats = await ddb.send(
+    new GetItemCommand({
+      TableName: table,
+      Key: marshall({ pk: `USER#${userId}`, sk: 'STATS' }),
+    }),
+  )
+  if (!ddbResUserStats.Item) throw new HttpError(404, { error: 'user_stats_not_found' })
+
+  const userStats = unmarshall(ddbResUserStats.Item) as UserStatsRecord
+  const { bytes: quotaBytes, count: quotaCount } = getQuota(userStats.balanceSat)
+  if (userStats.totalBytes + declaredBytes > quotaBytes) throw new HttpError(403, { error: 'bytes_quota_exceeded' })
+  if (userStats.workCount >= quotaCount) throw new HttpError(403, { error: 'count_quota_exceeded' })
 
   const uploadId = ulid()
   const s3Key = `uploads/${uploadId}/tmp`

@@ -1,5 +1,5 @@
 import { S3Client } from '@aws-sdk/client-s3'
-import { DeleteItemCommand, GetItemCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb'
+import { DeleteItemCommand, GetItemCommand, TransactWriteItemsCommand } from '@aws-sdk/client-dynamodb'
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 
 import { ddb } from '../lib/ddb'
@@ -27,7 +27,6 @@ export const handler = privateApiHandler(async (event, auth) => {
       ConsistentRead: true,
     }),
   )
-
   if (!ddbRes.Item) throw new HttpError(404, { error: 'work_not_found' })
 
   const work = unmarshall(ddbRes.Item) as WorkRecord
@@ -43,20 +42,38 @@ export const handler = privateApiHandler(async (event, auth) => {
   // WorkRecordのstatusをDELETINGに変更
   const nowIso = new Date().toISOString()
   await ddb.send(
-    new UpdateItemCommand({
-      TableName: table,
-      Key: marshall({ pk: work.pk, sk: work.sk }),
-      UpdateExpression: 'SET #status = :deleting, GSI3PK = :gsi3pk, GSI3SK = :gsi3sk', // GSI3を追加
-      ConditionExpression: 'attribute_exists(pk) AND attribute_exists(sk) AND #status = :ok',
-      ExpressionAttributeNames: {
-        '#status': 'status',
-      },
-      ExpressionAttributeValues: marshall({
-        ':deleting': 'DELETING',
-        ':gsi3pk': `WORK_STATUS#DELETING`,
-        ':gsi3sk': `WORK#${nowIso}#${work.workId}`,
-        ':ok': 'OK',
-      }),
+    new TransactWriteItemsCommand({
+      TransactItems: [
+        {
+          Update: {
+            TableName: table,
+            Key: marshall({ pk: work.pk, sk: work.sk }),
+            UpdateExpression: 'SET #status = :deleting, GSI3PK = :gsi3pk, GSI3SK = :gsi3sk', // GSI3を追加
+            ConditionExpression: 'attribute_exists(pk) AND attribute_exists(sk) AND #status = :ok',
+            ExpressionAttributeNames: {
+              '#status': 'status',
+            },
+            ExpressionAttributeValues: marshall({
+              ':deleting': 'DELETING',
+              ':gsi3pk': `WORK_STATUS#DELETING`,
+              ':gsi3sk': `WORK#${nowIso}#${work.workId}`,
+              ':ok': 'OK',
+            }),
+          },
+        },
+        {
+          Update: {
+            TableName: table,
+            Key: marshall({ pk: `USER#${userId}`, sk: 'STATS' }),
+            UpdateExpression: 'SET totalBytes = totalBytes - :bytesDec, workCount = workCount - :workCountDec',
+            ConditionExpression: 'attribute_exists(pk) AND attribute_exists(sk)',
+            ExpressionAttributeValues: marshall({
+              ':bytesDec': work.bytes,
+              ':workCountDec': 1,
+            }),
+          },
+        },
+      ],
     }),
   )
 

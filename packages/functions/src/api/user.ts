@@ -5,15 +5,16 @@ import { ddb } from '../lib/ddb'
 import { apiHandler, HttpError, mustGetEnv, responseJson } from '../lib/util'
 
 import type { GetUserOk } from '@shared/apiInterface'
-import type { UserRecord, WorkRecord } from '@shared/ddbRecord'
+import type { UserRecord, UserStatsRecord, WorkRecord } from '@shared/ddbRecord'
 
 export const handler = apiHandler(async (event) => {
   const table = mustGetEnv('APP_TABLE')
+  const withStats = event.queryStringParameters?.withStats === 'true'
 
   const userId = (event.pathParameters?.userId || '').trim()
   if (!userId) throw new HttpError(400, { error: 'missing_user_id' })
 
-  const [ddbResUser, ddbResWorks] = await Promise.all([
+  const [ddbResUser, ddbResWorks, ddbResUserStats] = await Promise.all([
     ddb.send(
       new GetItemCommand({
         TableName: table,
@@ -38,6 +39,15 @@ export const handler = apiHandler(async (event) => {
         },
       }),
     ),
+    withStats
+      ? ddb.send(
+          new GetItemCommand({
+            TableName: table,
+            Key: marshall({ pk: `USER#${userId}`, sk: 'STATS' }),
+            ConsistentRead: true,
+          }),
+        )
+      : Promise.resolve(undefined),
   ])
 
   if (!ddbResUser.Item) throw new HttpError(404, { error: 'user_not_found' })
@@ -46,10 +56,12 @@ export const handler = apiHandler(async (event) => {
   const userWorks = (ddbResWorks.Items || [])
     .map((item) => unmarshall(item) as WorkRecord)
     .filter((item) => item.type === 'WORK' && item.sk === 'META')
+  const userStats = ddbResUserStats?.Item ? (unmarshall(ddbResUserStats.Item) as UserStatsRecord) : undefined
 
   const response: GetUserOk = {
     user,
     userWorks,
+    ...(userStats ? { userStats } : {}),
   }
   return responseJson(200, response)
 })

@@ -20,6 +20,15 @@
       </div>
     </section>
 
+    <section v-if="userRecord" class="gc-section-noframe lc-section-monabalance">
+      <div class="lc-monabalance">{{ balanceStr }} <small class="lc-monabalance-unit">MONA</small></div>
+      <div class="lc-monabalance-quotabar">
+        <div class="lc-monabalance-usedbar" :style="{ width: `${bytesUsedPercent}%` }"></div>
+      </div>
+      <div class="lc-quota-text">{{ formatBytes(usedBytes) }} / {{ formatBytes(quotaBytes) }}</div>
+      <div class="lc-quota-text">( {{ usedCount }} / {{ quotaCount }} works )</div>
+    </section>
+
     <section v-if="userRecord" class="gc-section-framed lc-section-artworks">
       <div class="lc-section-header">
         <h3>Artworks</h3>
@@ -44,22 +53,49 @@
 
 <script setup lang="ts">
 import { Birdhouse, Wallet, Plus, LogOut } from 'lucide-vue-next'
+import { getQuota } from '@shared/const'
 import { openWalletModalKey, managedLogoutKey } from '@/lib/injectionKeys'
-import { getHttpErrorStatusCode, workImageUrl } from '@/lib/util'
+import { getHttpErrorStatusCode, workImageUrl, formatBalanceSat, formatBytes } from '@/lib/util'
 
 const managedLogout = inject(managedLogoutKey)
 const openWalletModal = inject(openWalletModalKey)
 
 const router = useRouter()
-const { user: authUser, isLoading: isAuthLoading } = useWalletAuth()
+const { user: authUser, isLoading: isAuthLoading, wallet, walletRo } = useWalletAuth()
 const api = useApi()
 const runtimeConfig = useRuntimeConfig()
 
 const meUserId = computed(() => authUser.value?.address || '')
 const userRecord = computed(() => authUser.value?.userRecord)
+const userStatsRecord = computed(() => authUser.value?.userStatsRecord ?? null)
 const userIconUrl = computed(() => {
   if (!userRecord.value?.iconKey) return ''
   return `${runtimeConfig.public.imgBase}/${userRecord.value.iconKey}`
+})
+const walletInstance = computed(() => wallet.value || walletRo.value || null)
+const balanceStr = computed(() => {
+  if (!userStatsRecord.value) return '--'
+  else return formatBalanceSat(userStatsRecord.value.balanceSat)
+})
+const quotaBytes = computed(() => {
+  if (!userStatsRecord.value) return 0
+  return getQuota(userStatsRecord.value.balanceSat).bytes
+})
+const usedBytes = computed(() => {
+  if (!userStatsRecord.value) return 0
+  return userStatsRecord.value.totalBytes
+})
+const quotaCount = computed(() => {
+  if (!userStatsRecord.value) return 0
+  return getQuota(userStatsRecord.value.balanceSat).count
+})
+const usedCount = computed(() => {
+  if (!userStatsRecord.value) return 0
+  return userStatsRecord.value.workCount
+})
+const bytesUsedPercent = computed(() => {
+  if (!userStatsRecord.value || quotaBytes.value <= 0) return 100
+  return (usedBytes.value / quotaBytes.value) * 100
 })
 
 const { data, error, refresh } = await useAsyncData(
@@ -122,6 +158,10 @@ const toNuxtError = (error: unknown) => {
   margin-block: var(--space-6);
 }
 
+.lc-section-monabalance {
+  margin-block: var(--space-6);
+}
+
 .lc-section-artworks {
   margin-block: var(--space-6);
   padding-block: var(--space-4) var(--space-5);
@@ -155,6 +195,35 @@ const toNuxtError = (error: unknown) => {
 .lc-user-bio {
   margin: 0;
   color: var(--color-muted);
+}
+
+.lc-monabalance {
+  font-size: var(--font-size-2xl);
+  text-align: right;
+}
+
+.lc-monabalance-unit {
+  font-size: var(--font-size-md);
+}
+
+.lc-quota-text {
+  margin: 0;
+  text-align: right;
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+}
+
+.lc-monabalance-quotabar {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-block: var(--space-1);
+}
+
+.lc-monabalance-usedbar {
+  height: 20px;
+  background-color: var(--color-primary);
 }
 
 .lc-section-header {

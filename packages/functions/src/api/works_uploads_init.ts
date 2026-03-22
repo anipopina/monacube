@@ -42,9 +42,10 @@ export const handler = privateApiHandler(async (event, auth) => {
     new GetItemCommand({
       TableName: table,
       Key: marshall({ pk: `USER#${userId}`, sk: 'STATS' }),
+      ConsistentRead: true,
     }),
   )
-  if (!ddbResUserStats.Item) throw new HttpError(404, { error: 'user_stats_not_found' })
+  if (!ddbResUserStats.Item) throw new HttpError(500, { error: 'user_stats_not_found' })
 
   const userStats = unmarshall(ddbResUserStats.Item) as UserStatsRecord
   const { bytes: quotaBytes, count: quotaCount } = getQuota(userStats.balanceSat)

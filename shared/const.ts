@@ -33,3 +33,15 @@ export const getQuota = (monaSat: number): { bytes: number; count: number } => {
   const bytes = count * 1024 * 1024 // 0.1MONAあたり1MB
   return { bytes, count }
 }
+
+export const getLegalAcceptanceMessage = (userId: string, termsVersion: string, privacyVersion: string, acceptedAt: string) => {
+  return `MonaCube Legal Agreement
+
+User: ${userId}
+Terms: ${termsVersion}
+Privacy: ${privacyVersion}
+Date: ${acceptedAt}
+
+I agree to the MonaCube Terms of Service and Privacy Policy.
+`
+}

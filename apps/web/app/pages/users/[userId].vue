@@ -21,7 +21,7 @@
 
       <div v-if="userWorks?.length" class="gc-works-grid">
         <NuxtLink v-for="work in userWorks" :key="work.workId" :to="`/works/${work.workId}`" class="gc-work-tile" :title="work.title">
-          <img :src="toThumbUrl(work.workId)" :alt="work.title" loading="lazy" />
+          <img :src="toThumbUrl(work.workId, work.updatedAt)" :alt="work.title" loading="lazy" />
         </NuxtLink>
       </div>
 
@@ -32,7 +32,7 @@
 
 <script setup lang="ts">
 import { User } from 'lucide-vue-next'
-import { getHttpErrorStatusCode, workImageUrl } from '@/lib/util'
+import { toNuxtError, workImageUrl } from '@/lib/util'
 import { validateAddress } from '@/lib/monawallet'
 
 const route = useRoute()
@@ -44,7 +44,7 @@ const { data, error } = await useAsyncData(
   () => `user-${userId.value}`,
   async () => {
     if (!validateAddress(userId.value)) {
-      throw createError({ statusCode: 404, statusMessage: 'User not found' })
+      throw createError({ statusCode: 404 })
     }
     return api.getUser(userId.value)
   },
@@ -55,39 +55,23 @@ const userRecord = computed(() => data.value?.user)
 const userWorks = computed(() => data.value?.userWorks ?? null)
 const userIconUrl = computed(() => {
   if (!userRecord.value?.iconKey) return ''
-  return `${runtimeConfig.public.imgBase}/${userRecord.value.iconKey}`
+  return `${runtimeConfig.public.imgBase}/${userRecord.value.iconKey}?cb=${userRecord.value.updatedAt}`
 })
+
+const toThumbUrl = (workId: string, cacheBuster: string): string => {
+  return workImageUrl(runtimeConfig.public.imgBase, workId, 'thumb', cacheBuster)
+}
 
 watch(
   error,
   (value) => {
-    if (value) showError(toNuxtError(value))
+    if (value) showError(toNuxtError(value, { 0: 'Failed to load user profile', 404: 'User not found' }))
   },
   { immediate: true },
 )
-
-const toThumbUrl = (workId: string): string => {
-  return workImageUrl(runtimeConfig.public.imgBase, workId, 'thumb')
-}
-
-const toNuxtError = (error: unknown) => {
-  const statusCode = getHttpErrorStatusCode(error)
-  if (statusCode === 404) {
-    return createError({ statusCode: 404, statusMessage: 'User not found' })
-  }
-  if (statusCode) {
-    return createError({ statusCode, statusMessage: 'Failed to load user profile' })
-  }
-  if (error instanceof Error) {
-    return createError({ statusCode: 500, statusMessage: error.message })
-  }
-  return createError({ statusCode: 500, statusMessage: 'Unknown error' })
-}
 </script>
 
 <style lang="scss" scoped>
-@use '@/assets/css/tokens' as tokens;
-
 .lc-section-profile {
   margin-block: var(--space-6);
 }

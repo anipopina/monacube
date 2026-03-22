@@ -29,7 +29,7 @@ export type WorkPk = `WORK#${Ulid}`
 export type NoncePk = `NONCE#${Hex}`
 export type UploadPk = `UPLOAD#${Ulid}`
 
-export type DdbEntityType = 'USER' | 'USER_STATS' | 'WORK' | 'TIP' | 'NONCE' | 'UPLOAD'
+export type DdbEntityType = 'USER' | 'USER_STATS' | 'WORK' | 'TIP' | 'NONCE' | 'UPLOAD' | 'LEGAL_ACCEPTANCE'
 
 export type DdbBaseRecord<TType extends DdbEntityType, TPk extends DdbPk = DdbPk, TSk extends DdbSk = DdbSk> = {
   pk: TPk
@@ -53,6 +53,8 @@ export type UserStatsRecord = DdbBaseRecord<'USER_STATS', UserPk, 'STATS'> & {
   lastLoginAt: Iso8601String
   totalBytes: number // total bytes of all works owned by the user
   workCount: number
+  termsVer: string // version of terms accepted by the user; empty string if never accepted
+  privacyVer: string // version of privacy policy accepted by the user; empty string if never accepted
   monaCheckedAt: Iso8601String // last time the user's balance was checked on the blockchain
   monaNextChkAt: Iso8601String // when the next balance check should be performed; used to stagger balance checks for many users and avoid spikes in blockchain queries
 
@@ -122,4 +124,15 @@ export type UploadRecord = DdbBaseRecord<'UPLOAD', UploadPk, 'META'> & {
   declaredBytes: number
 }
 
-export type AppTableRecord = UserRecord | UserStatsRecord | WorkRecord | TipRecord | NonceRecord | UploadRecord
+// legal document acceptance record
+// sk format: LEGAL#<acceptedAt>
+export type LegalAcceptanceRecord = DdbBaseRecord<'LEGAL_ACCEPTANCE', UserPk, `LEGAL#${Iso8601String}`> & {
+  userId: MonaAddress
+  termsVersion: string
+  privacyVersion: string
+  acceptedAt: Iso8601String
+  signedMessage: string
+  signature: string
+}
+
+export type AppTableRecord = UserRecord | UserStatsRecord | WorkRecord | TipRecord | NonceRecord | UploadRecord | LegalAcceptanceRecord

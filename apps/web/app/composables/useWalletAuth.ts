@@ -93,13 +93,16 @@ export const useWalletAuth = () => {
 
   return {
     user: auth.user,
+    isNew: auth.isNew,
     wallet,
     walletRo,
     isLoading: readonly(isLoading),
+
     createPasskey: _createPasskey,
     login,
     logout,
     lockWallet,
+    updateUserRecords: auth.updateUserRecords,
   }
 }
 

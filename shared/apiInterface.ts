@@ -55,7 +55,7 @@ export type GetUserOk = {
   userStats?: UserStatsRecord
 }
 export type GetUserReqQuery = {
-  withStats?: boolean // whether to include userStats in the response; defaults to false
+  includeUserStats?: boolean // whether to include userStats in the response; defaults to false
 }
 
 // MARK: private API (認証が必要なAPI)
@@ -89,4 +89,15 @@ export type WorksUploadsFinalizeOk = {
 // GET /me/tips
 export type GetMeTipsOk = {
   tips: TipRecord[]
+}
+
+// POST /me/legal/accept
+export type MeLegalAcceptReqBody = {
+  termsVersion: string
+  privacyVersion: string
+  signedAt: string // ISO8601 string
+  signature: string
+}
+export type MeLegalAcceptOk = {
+  userStats: UserStatsRecord
 }

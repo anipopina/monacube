@@ -60,7 +60,7 @@
 
 <script setup lang="ts">
 import { ExternalLink, Trash2 } from 'lucide-vue-next'
-import { formatBytes, formatIsoDate, getHttpErrorStatusCode, workImageUrl } from '@/lib/util'
+import { toNuxtError, formatBytes, formatIsoDate, workImageUrl } from '@/lib/util'
 
 const route = useRoute()
 const router = useRouter()
@@ -75,7 +75,7 @@ const { data, error } = await useAsyncData(
   () => `work-${workId.value}`,
   async () => {
     if (!workId.value) {
-      throw createError({ statusCode: 404, statusMessage: 'Artwork not found' })
+      throw createError({ statusCode: 404 })
     }
     return api.getWork(workId.value)
   },
@@ -89,38 +89,16 @@ const work = computed(() => {
 const isOwner = computed(() => authUser.value?.address === work.value?.ownerId)
 const workOriginalImageUrl = computed(() => {
   if (!work.value) return ''
-  return workImageUrl(runtimeConfig.public.imgBase, work.value.workId, 'original')
+  return workImageUrl(runtimeConfig.public.imgBase, work.value.workId, 'original', work.value.updatedAt)
 })
 const workLargeImageUrl = computed(() => {
   if (!work.value) return ''
-  return workImageUrl(runtimeConfig.public.imgBase, work.value.workId, 'large')
+  return workImageUrl(runtimeConfig.public.imgBase, work.value.workId, 'large', work.value.updatedAt)
 })
 const isUnder1MB = computed(() => {
   if (!work.value) return false
   return work.value.bytes <= 1024 * 1024
 })
-
-watch(
-  error,
-  (value) => {
-    if (value) showError(toNuxtError(value))
-  },
-  { immediate: true },
-)
-
-const toNuxtError = (error: unknown) => {
-  const statusCode = getHttpErrorStatusCode(error)
-  if (statusCode === 404) {
-    return createError({ statusCode: 404, statusMessage: 'Artwork not found' })
-  }
-  if (statusCode) {
-    return createError({ statusCode, statusMessage: 'Failed to load artwork detail' })
-  }
-  if (error instanceof Error) {
-    return createError({ statusCode: 500, statusMessage: error.message })
-  }
-  return createError({ statusCode: 500, statusMessage: 'Unknown error' })
-}
 
 const openOriginalImage = () => {
   if (!workOriginalImageUrl.value) return
@@ -138,6 +116,14 @@ const deleteWork = async () => {
     toast.error('作品の削除に失敗しました')
   }
 }
+
+watch(
+  error,
+  (value) => {
+    if (value) showError(toNuxtError(value, { 0: 'Failed to load artwork detail', 404: 'Artwork not found' }))
+  },
+  { immediate: true },
+)
 </script>
 
 <style lang="scss" scoped>

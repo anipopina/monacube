@@ -70,6 +70,18 @@ export const useAuth = () => {
     localStorage.removeItem(STOREKEY_AUTH_USER)
   }
 
+  const updateUserRecords = (records: { userRecord?: UserRecord; userStatsRecord?: UserStatsRecord }) => {
+    if (!user.value) return
+    // compute()の再計算をトリガーするためにuser.valueごと更新する
+    user.value = {
+      ...user.value,
+      userRecord: records.userRecord ?? user.value.userRecord,
+      userStatsRecord: records.userStatsRecord ?? user.value.userStatsRecord,
+    }
+    // 更新後のユーザーデータをlocalStorageに保存
+    localStorage.setItem(STOREKEY_AUTH_USER, JSON.stringify(user.value))
+  }
+
   const init = () => {
     // skip if already initialized
     if (initialized.value) return
@@ -100,9 +112,11 @@ export const useAuth = () => {
   return {
     user: readonly(user),
     isNew: readonly(isNew),
+
     getChallenge,
     login,
     logout,
+    updateUserRecords,
   }
 }
 

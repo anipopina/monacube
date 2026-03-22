@@ -63,14 +63,6 @@ const canSubmit = computed(() => {
   return Boolean(selectedFile.value) && title.value.length > 0
 })
 
-watch(
-  user,
-  (value) => {
-    if (!value) router.push('/')
-  },
-  { immediate: true },
-)
-
 const onChangeFile = (event: Event) => {
   const target = event.target as HTMLInputElement | null
   const file = target?.files?.[0]
@@ -173,6 +165,14 @@ const clearPreview = () => {
 onBeforeUnmount(() => {
   clearPreview()
 })
+
+watch(
+  user,
+  (value) => {
+    if (!value) router.push('/')
+  },
+  { immediate: true },
+)
 </script>
 
 <style lang="scss" scoped>

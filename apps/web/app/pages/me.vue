@@ -32,7 +32,7 @@
     <section v-if="userRecord" class="gc-section-framed lc-section-artworks">
       <div class="lc-section-header">
         <h3>Artworks</h3>
-        <p v-if="userWorks" class="lc-count">{{ userWorks.length }} works</p>
+        <p v-if="userWorks" class="lc-count">{{ usedCount }} works</p>
       </div>
 
       <div v-if="userWorks" class="gc-works-grid">
@@ -42,7 +42,7 @@
           </span>
         </NuxtLink>
         <NuxtLink v-for="work in userWorks" :key="work.workId" :to="`/works/${work.workId}`" class="gc-work-tile" :title="work.title">
-          <img :src="toThumbUrl(work.workId)" :alt="work.title" loading="lazy" />
+          <img :src="toThumbUrl(work.workId, work.updatedAt)" :alt="work.title" loading="lazy" />
         </NuxtLink>
       </div>
 
@@ -55,44 +55,38 @@
 import { Birdhouse, Wallet, Plus, LogOut } from 'lucide-vue-next'
 import { getQuota } from '@shared/const'
 import { openWalletModalKey, managedLogoutKey } from '@/lib/injectionKeys'
-import { getHttpErrorStatusCode, workImageUrl, formatBalanceSat, formatBytes } from '@/lib/util'
+import { toNuxtError, workImageUrl, formatBalanceSat, formatBytes } from '@/lib/util'
 
 const managedLogout = inject(managedLogoutKey)
 const openWalletModal = inject(openWalletModalKey)
 
 const router = useRouter()
-const { user: authUser, isLoading: isAuthLoading, wallet, walletRo } = useWalletAuth()
+const { user: authUser, isLoading: isAuthLoading, wallet, walletRo, updateUserRecords } = useWalletAuth()
 const api = useApi()
 const runtimeConfig = useRuntimeConfig()
 
-const meUserId = computed(() => authUser.value?.address || '')
-const userRecord = computed(() => authUser.value?.userRecord)
+const meUserId = computed(() => authUser.value?.address ?? '')
+const userRecord = computed(() => authUser.value?.userRecord ?? null)
 const userStatsRecord = computed(() => authUser.value?.userStatsRecord ?? null)
 const userIconUrl = computed(() => {
   if (!userRecord.value?.iconKey) return ''
-  return `${runtimeConfig.public.imgBase}/${userRecord.value.iconKey}`
+  return `${runtimeConfig.public.imgBase}/${userRecord.value.iconKey}?cb=${userRecord.value.updatedAt}`
 })
 const walletInstance = computed(() => wallet.value || walletRo.value || null)
 const balanceStr = computed(() => {
   if (!userStatsRecord.value) return '--'
-  else return formatBalanceSat(userStatsRecord.value.balanceSat)
+  return formatBalanceSat(userStatsRecord.value.balanceSat)
 })
 const quotaBytes = computed(() => {
   if (!userStatsRecord.value) return 0
   return getQuota(userStatsRecord.value.balanceSat).bytes
 })
-const usedBytes = computed(() => {
-  if (!userStatsRecord.value) return 0
-  return userStatsRecord.value.totalBytes
-})
 const quotaCount = computed(() => {
   if (!userStatsRecord.value) return 0
   return getQuota(userStatsRecord.value.balanceSat).count
 })
-const usedCount = computed(() => {
-  if (!userStatsRecord.value) return 0
-  return userStatsRecord.value.workCount
-})
+const usedBytes = computed(() => userStatsRecord.value?.totalBytes ?? 0)
+const usedCount = computed(() => userStatsRecord.value?.workCount ?? 0)
 const bytesUsedPercent = computed(() => {
   if (!userStatsRecord.value || quotaBytes.value <= 0) return 100
   return (usedBytes.value / quotaBytes.value) * 100
@@ -101,12 +95,21 @@ const bytesUsedPercent = computed(() => {
 const { data, error, refresh } = await useAsyncData(
   () => `me-${meUserId.value}`,
   async () => {
-    return api.getUser(meUserId.value)
+    const data = await api.getUser(meUserId.value, { includeUserStats: true })
+    updateUserRecords({
+      userRecord: data.user,
+      ...(data.userStats ? { userStatsRecord: data.userStats } : {}),
+    })
+    return data
   },
-  { immediate: false },
+  { immediate: false }, // call refresh() manually
 )
 
 const userWorks = computed(() => data.value?.userWorks ?? null)
+
+const toThumbUrl = (workId: string, cacheBuster: string): string => {
+  return workImageUrl(runtimeConfig.public.imgBase, workId, 'thumb', cacheBuster)
+}
 
 watch(
   authUser,
@@ -115,7 +118,6 @@ watch(
   },
   { immediate: true },
 )
-
 watch(
   meUserId,
   async (value) => {
@@ -123,37 +125,16 @@ watch(
   },
   { immediate: true },
 )
-
 watch(
   error,
   (value) => {
-    if (value) showError(toNuxtError(value))
+    if (value) showError(toNuxtError(value, { 0: 'Failed to load user profile', 404: 'User not found' }))
   },
   { immediate: true },
 )
-
-const toThumbUrl = (workId: string): string => {
-  return workImageUrl(runtimeConfig.public.imgBase, workId, 'thumb')
-}
-
-const toNuxtError = (error: unknown) => {
-  const statusCode = getHttpErrorStatusCode(error)
-  if (statusCode === 404) {
-    return createError({ statusCode: 404, statusMessage: 'User not found' })
-  }
-  if (statusCode) {
-    return createError({ statusCode, statusMessage: 'Failed to load my profile' })
-  }
-  if (error instanceof Error) {
-    return createError({ statusCode: 500, statusMessage: error.message })
-  }
-  return createError({ statusCode: 500, statusMessage: 'Unknown error' })
-}
 </script>
 
 <style lang="scss" scoped>
-@use '@/assets/css/tokens' as tokens;
-
 .lc-section-profile {
   margin-block: var(--space-6);
 }

@@ -139,6 +139,7 @@ export default $config({
     api.route('GET /me/tips', 'packages/functions/src/api/me_tips.handler')
     // api.route('POST /me/icon/uploads/init', 'packages/functions/src/api/me_icon_uploads_init.handler')
     // api.route('POST /me/icon/uploads/finalize', 'packages/functions/src/api/me_icon_uploads_finalize.handler')
+    api.route('POST /legal/acceptance', 'packages/functions/src/api/legal_acceptance.handler')
 
     // ========= Frontend (Nuxt SPA Static) =========
     const web = new sst.aws.StaticSite('Web', {

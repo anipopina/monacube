@@ -9,7 +9,7 @@ import type { UserRecord, UserStatsRecord, WorkRecord } from '@shared/ddbRecord'
 
 export const handler = apiHandler(async (event) => {
   const table = mustGetEnv('APP_TABLE')
-  const withStats = event.queryStringParameters?.withStats === 'true'
+  const includeUserStats = event.queryStringParameters?.includeUserStats === 'true'
 
   const userId = (event.pathParameters?.userId || '').trim()
   if (!userId) throw new HttpError(400, { error: 'missing_user_id' })
@@ -39,7 +39,7 @@ export const handler = apiHandler(async (event) => {
         },
       }),
     ),
-    withStats
+    includeUserStats
       ? ddb.send(
           new GetItemCommand({
             TableName: table,

@@ -66,91 +66,89 @@ export const handler = apiHandler(async (event) => {
   // 4) USER upsert
   let userRecord: UserRecord
   let userStatsRecord: UserStatsRecord
-  try {
-    // 存在確認
-    const ddbResUser = await ddb.send(
-      new GetItemCommand({
-        TableName: table,
-        Key: marshall({ pk: `USER#${address}`, sk: 'PROFILE' }),
-        ConsistentRead: true,
+
+  // 存在確認
+  const ddbResUser = await ddb.send(
+    new GetItemCommand({
+      TableName: table,
+      Key: marshall({ pk: `USER#${address}`, sk: 'PROFILE' }),
+      ConsistentRead: true,
+    }),
+  )
+
+  if (!ddbResUser.Item) {
+    // なければ USER, USER_STATS を新規作成
+    const monaNextCheckIso = getNextMonaCheckIso()
+    userRecord = {
+      pk: `USER#${address}`,
+      sk: 'PROFILE',
+      type: 'USER',
+      userId: address,
+      name: `monar-${address.slice(0, 6)}`,
+      bio: '',
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    }
+    userStatsRecord = {
+      pk: `USER#${address}`,
+      sk: 'STATS',
+      type: 'USER_STATS',
+      balanceSat: 0,
+      lastLoginAt: nowIso,
+      totalBytes: 0,
+      workCount: 0,
+      termsVer: '',
+      privacyVer: '',
+      monaCheckedAt: new Date(0).toISOString(), // クライアントから手動更新できるように初期値は過去日時
+      monaNextChkAt: monaNextCheckIso,
+      GSI1PK: 'MONA_CHECK',
+      GSI1SK: `USER_STATS#${monaNextCheckIso}`,
+    }
+    await ddb.send(
+      new TransactWriteItemsCommand({
+        TransactItems: [
+          {
+            Put: {
+              TableName: table,
+              Item: marshall(userRecord),
+              // いちおう上書き防止
+              // attribute_not_exists(pk) だけでも大丈夫だけど、意図を明示するためにskも見ておく
+              ConditionExpression: 'attribute_not_exists(pk) AND attribute_not_exists(sk)',
+            },
+          },
+          {
+            Put: {
+              TableName: table,
+              Item: marshall(userStatsRecord),
+            },
+          },
+        ],
       }),
     )
+  } else {
+    // 既存ユーザー
+    userRecord = unmarshall(ddbResUser.Item) as UserRecord
 
-    if (!ddbResUser.Item) {
-      // なければ USER, USER_STATS を新規作成
-      const monaNextCheckIso = getNextMonaCheckIso()
-      userRecord = {
-        pk: `USER#${address}`,
-        sk: 'PROFILE',
-        type: 'USER',
-        userId: address,
-        name: `monar-${address.slice(0, 6)}`,
-        bio: '',
-        createdAt: nowIso,
-        updatedAt: nowIso,
-      }
-      userStatsRecord = {
-        pk: `USER#${address}`,
-        sk: 'STATS',
-        type: 'USER_STATS',
-        balanceSat: 0,
-        lastLoginAt: nowIso,
-        totalBytes: 0,
-        workCount: 0,
-        monaCheckedAt: new Date(0).toISOString(), // クライアントから手動更新できるように初期値は過去日時
-        monaNextChkAt: monaNextCheckIso,
-        GSI1PK: 'MONA_CHECK',
-        GSI1SK: `USER_STATS#${monaNextCheckIso}`,
-      }
-      await ddb.send(
-        new TransactWriteItemsCommand({
-          TransactItems: [
-            {
-              Put: {
-                TableName: table,
-                Item: marshall(userRecord),
-                // いちおう上書き防止
-                // attribute_not_exists(pk) だけでも大丈夫だけど、意図を明示するためにskも見ておく
-                ConditionExpression: 'attribute_not_exists(pk) AND attribute_not_exists(sk)',
-              },
-            },
-            {
-              Put: {
-                TableName: table,
-                Item: marshall(userStatsRecord),
-              },
-            },
-          ],
-        }),
-      )
-    } else {
-      // 既存ユーザー
-      userRecord = unmarshall(ddbResUser.Item) as UserRecord
+    // USER_STATS レコードも取得
+    const ddbResUserStats = await ddb.send(
+      new GetItemCommand({
+        TableName: table,
+        Key: marshall({ pk: `USER#${address}`, sk: 'STATS' }),
+      }),
+    )
+    if (!ddbResUserStats.Item) throw new Error('USER_STATS record not found for existing user')
+    userStatsRecord = unmarshall(ddbResUserStats.Item) as UserStatsRecord
+    userRecord.updatedAt = nowIso
 
-      // USER_STATS レコードも取得
-      const ddbResUserStats = await ddb.send(
-        new GetItemCommand({
-          TableName: table,
-          Key: marshall({ pk: `USER#${address}`, sk: 'STATS' }),
-        }),
-      )
-      if (!ddbResUserStats.Item) throw new Error('USER_STATS record not found for existing user')
-      userStatsRecord = unmarshall(ddbResUserStats.Item) as UserStatsRecord
-      userRecord.updatedAt = nowIso
-
-      // lastLoginAt を更新
-      await ddb.send(
-        new UpdateItemCommand({
-          TableName: table,
-          Key: marshall({ pk: `USER#${address}`, sk: 'STATS' }),
-          UpdateExpression: 'SET lastLoginAt = :now',
-          ExpressionAttributeValues: marshall({ ':now': nowIso }),
-        }),
-      )
-    }
-  } catch (error) {
-    console.error('DynamoDB error in auth_verify', { address, nonce, error })
-    throw new HttpError(500, { error: 'db_error' })
+    // lastLoginAt を更新
+    await ddb.send(
+      new UpdateItemCommand({
+        TableName: table,
+        Key: marshall({ pk: `USER#${address}`, sk: 'STATS' }),
+        UpdateExpression: 'SET lastLoginAt = :now',
+        ExpressionAttributeValues: marshall({ ':now': nowIso }),
+      }),
+    )
   }
 
   // 5) access token 発行

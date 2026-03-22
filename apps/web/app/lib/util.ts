@@ -70,8 +70,29 @@ export const getHttpErrorStatusCode = (error: unknown): number | undefined => {
   return undefined
 }
 
-export const workImageUrl = (imgBase: string, workId: string, size: 'original' | 'large' | 'medium' | 'thumb'): string => {
-  return `${imgBase}/${workId2imageKey(workId, size)}`
+export const workImageUrl = (
+  imgBase: string,
+  workId: string,
+  size: 'original' | 'large' | 'medium' | 'thumb',
+  cacheBuster: string,
+): string => {
+  return `${imgBase}/${workId2imageKey(workId, size)}?cb=${cacheBuster}`
+}
+
+export const toNuxtError = (error: unknown, httpStatus2message?: Record<number, string>) => {
+  // httpStatus2message can be used to customize error messages for specific status codes
+  // httpStatus2message[0] can be used as a default message for any status code
+  const statusCode = getHttpErrorStatusCode(error)
+  if (statusCode && httpStatus2message?.[statusCode]) {
+    return createError({ statusCode, statusMessage: httpStatus2message[statusCode] })
+  }
+  if (statusCode) {
+    return createError({ statusCode, statusMessage: httpStatus2message?.[0] ?? 'Failed to load resource' })
+  }
+  if (error instanceof Error) {
+    return createError({ statusCode: 500, statusMessage: error.message })
+  }
+  return createError({ statusCode: 500, statusMessage: 'Unknown error' })
 }
 
 const normalizeStatus = (value: unknown): number | undefined => {

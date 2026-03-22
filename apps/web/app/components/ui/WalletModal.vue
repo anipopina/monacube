@@ -160,7 +160,7 @@ const walletInstance = computed(() => wallet.value || walletRo.value || null)
 const walletAddress = computed(() => walletInstance.value?.address || '')
 const balanceStr = computed(() => {
   if (!walletInstance.value || walletInstance.value.lastBalanceUpdate === 0) return '--'
-  else return formatBalance(walletInstance.value.balance + walletInstance.value.unconfBalance)
+  return formatBalance(walletInstance.value.balance + walletInstance.value.unconfBalance)
 })
 const unconfStr = computed(() => {
   if (!walletInstance.value || walletInstance.value.unconfBalance <= 0) return ''

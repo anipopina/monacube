@@ -8,6 +8,8 @@
     <template #nav>
       <NuxtLink to="/users/M8KAtuA3xWGLhsjim81uPv1uBQMyatJMW5" class="gc-only-desktop">User1</NuxtLink>
       <NuxtLink to="/users/MET11NjMLWS6qrf6bV4gscWW2B1WSV4QVp" class="gc-only-desktop">User2</NuxtLink>
+      <NuxtLink to="/terms" class="gc-only-desktop">Terms</NuxtLink>
+      <NuxtLink to="/privacy" class="gc-only-desktop">Privacy</NuxtLink>
       <NuxtLink to="/about" class="gc-only-desktop">About</NuxtLink>
       <NuxtLink to="/settings" class="gc-only-desktop">
         <Settings class="gc-icon" aria-label="Settings" />
@@ -22,6 +24,8 @@
 
       <UiHamburger class="gc-only-mobile">
         <NuxtLink to="/">Home</NuxtLink>
+        <NuxtLink to="/terms">Terms</NuxtLink>
+        <NuxtLink to="/privacy">Privacy</NuxtLink>
         <NuxtLink to="/about">About</NuxtLink>
         <NuxtLink to="/settings"><Settings class="gc-icon gc-icon--small" aria-label="Settings" /></NuxtLink>
         <span><!-- spacer --></span>

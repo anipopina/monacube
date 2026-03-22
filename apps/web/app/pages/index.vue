@@ -23,7 +23,7 @@
     <section class="lc-section-artworks">
       <div v-if="works" class="gc-works-grid">
         <NuxtLink v-for="work in works" :key="work.workId" :to="`/works/${work.workId}`" class="gc-work-tile" :title="work.title">
-          <img :src="toThumbUrl(work.workId)" :alt="work.title" loading="lazy" />
+          <img :src="toThumbUrl(work.workId, work.updatedAt)" :alt="work.title" loading="lazy" />
         </NuxtLink>
       </div>
 
@@ -34,13 +34,12 @@
 
 <script setup lang="ts">
 import { Box, KeyRound } from 'lucide-vue-next'
-import { getHttpErrorStatusCode, workImageUrl } from '@/lib/util'
+import { toNuxtError, workImageUrl } from '@/lib/util'
 import { managedCreatePasskeyKey, managedLoginKey } from '@/lib/injectionKeys'
 
 const api = useApi()
 const runtimeConfig = useRuntimeConfig()
-const { user, isLoading: isAuthLoading } = useWalletAuth()
-const { isNew } = useAuth()
+const { user, isNew, isLoading: isAuthLoading } = useWalletAuth()
 
 const managedCreatePasskey = inject(managedCreatePasskeyKey)
 const managedLogin = inject(managedLoginKey)
@@ -54,28 +53,17 @@ const { data, error } = useAsyncData('works-home', async () => {
 
 const works = computed(() => data.value?.works ?? null)
 
+const toThumbUrl = (workId: string, cacheBuster: string): string => {
+  return workImageUrl(runtimeConfig.public.imgBase, workId, 'thumb', cacheBuster)
+}
+
 watch(
   error,
   (value) => {
-    if (value) showError(toNuxtError(value))
+    if (value) showError(toNuxtError(value, { 0: 'Failed to load artworks' }))
   },
   { immediate: true },
 )
-
-const toThumbUrl = (workId: string): string => {
-  return workImageUrl(runtimeConfig.public.imgBase, workId, 'thumb')
-}
-
-const toNuxtError = (error: unknown) => {
-  const statusCode = getHttpErrorStatusCode(error)
-  if (statusCode) {
-    return createError({ statusCode, statusMessage: 'Failed to load artworks' })
-  }
-  if (error instanceof Error) {
-    return createError({ statusCode: 500, statusMessage: error.message })
-  }
-  return createError({ statusCode: 500, statusMessage: 'Unknown error' })
-}
 </script>
 
 <style lang="scss" scoped>

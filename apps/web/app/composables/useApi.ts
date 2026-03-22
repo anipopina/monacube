@@ -17,6 +17,8 @@ import type {
   GetWorksReqQuery,
   GetMeTipsOk,
   GetUserReqQuery,
+  MeLegalAcceptOk,
+  MeLegalAcceptReqBody,
 } from '@shared/apiInterface'
 import { FetchError } from 'ofetch'
 
@@ -88,6 +90,9 @@ export const useApi = () => {
   // GET /me/tips
   const getMeTips = () => authedApiFetch<GetMeTipsOk>('/me/tips')
 
+  // POST /me/legal/accept
+  const postMeLegalAccept = (body: MeLegalAcceptReqBody) => authedApiFetch<MeLegalAcceptOk>('/me/legal/accept', { method: 'POST', body })
+
   return {
     getHealth,
     postAuthChallenge,
@@ -99,5 +104,6 @@ export const useApi = () => {
     postWorksUploadsFinalize,
     deleteWork,
     getMeTips,
+    postMeLegalAccept,
   }
 }

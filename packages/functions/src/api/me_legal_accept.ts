@@ -26,11 +26,11 @@ export const handler = privateApiHandler(async (event, auth) => {
     throw new HttpError(400, { error: 'invalid_legal_version' })
   }
 
-  // check signedAt is a valid ISO8601 string and not too far in the past or future (e.g. more than 1 hour difference from current time)
+  // check signedAt is a valid ISO8601 string and not too far in the past or future (e.g. more than 1 day difference from current time)
   const nowUnix = Math.floor(Date.now() / 1000)
   const signedAtUnix = Math.floor(new Date(signedAt).getTime() / 1000)
-  const oneHourInSeconds = 60 * 60
-  if (Math.abs(nowUnix - signedAtUnix) > oneHourInSeconds) throw new HttpError(400, { error: 'invalid_signed_at' })
+  const oneDayInSeconds = 24 * 60 * 60
+  if (Math.abs(nowUnix - signedAtUnix) > oneDayInSeconds) throw new HttpError(400, { error: 'invalid_signed_at' })
 
   const signedMessage = getLegalAcceptanceMessage(userId, termsVersion, privacyVersion, signedAt)
   const isValidSignature = verifySignature(userId, signedMessage, signature)

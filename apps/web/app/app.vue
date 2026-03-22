@@ -38,6 +38,7 @@
     <NuxtPage />
   </div>
   <UiWalletModal ref="walletModalRef" />
+  <UiLegalAcceptModal ref="legalAcceptModalRef" />
   <UiConfirm />
   <UiToastRenderer />
 </template>
@@ -46,13 +47,16 @@
 import { LogOut, KeyRound, Settings } from 'lucide-vue-next'
 import { PrfNotSupportedError } from '@/lib/passkey'
 import { managedCreatePasskeyKey, managedLoginKey, managedLogoutKey, managedLockWalletKey, openWalletModalKey } from '@/lib/injectionKeys'
+import { CURRENT_TERMS_VERSION } from '@shared/legal/terms'
+import { CURRENT_PRIVACY_VERSION } from '@shared/legal/privacy'
 
 useColorMode()
 const { user, isLoading, createPasskey, login, logout, lockWallet } = useWalletAuth()
 const walletModalRef = ref<{ openModal: () => Promise<void> } | null>(null)
-
+const legalAcceptModalRef = ref<{ openModal: () => Promise<void> } | null>(null)
 const toast = useToast()
 const openWalletModal = () => walletModalRef.value?.openModal()
+const openLegalAcceptModal = () => legalAcceptModalRef.value?.openModal()
 
 const managedCreatePasskey = async () => {
   toast.loading('Passkey 登録中', isLoading)
@@ -70,6 +74,12 @@ const managedLogin = async () => {
   try {
     await login()
     toast.success(`${user.value?.address || ''} でログインしました`)
+    if (
+      user.value?.userStatsRecord.termsVer !== CURRENT_TERMS_VERSION ||
+      user.value?.userStatsRecord.privacyVer !== CURRENT_PRIVACY_VERSION
+    ) {
+      openLegalAcceptModal()
+    }
   } catch (error) {
     if (error instanceof PrfNotSupportedError) {
       toast.error('お使いのブラウザ/デバイスは本サービスに必要な WebAuthn PRF をサポートしていません。別の環境でお試しください', 10_000)

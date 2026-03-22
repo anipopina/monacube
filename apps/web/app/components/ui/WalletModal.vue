@@ -178,7 +178,7 @@ const refreshBalance = async () => {
     await walletInstance.value.updateBalance()
   } catch (error) {
     console.error('Failed to refresh balance', error)
-    toast.error(error instanceof Error ? error.message : '残高の取得に失敗しました')
+    toast.error('残高の取得に失敗しました')
   } finally {
     isActionLoading.value = false
   }
@@ -213,7 +213,7 @@ const handleSend = async () => {
     sendAmount.value = ''
   } catch (error) {
     console.error('Failed to send MONA', error)
-    toast.error(error instanceof Error ? error.message : '送信に失敗しました')
+    toast.error('送信に失敗しました')
   } finally {
     isActionLoading.value = false
   }

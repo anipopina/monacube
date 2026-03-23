@@ -190,6 +190,20 @@ export class MonaWallet extends MonaWalletRo {
   }
 
   async sendMona(toAddress: string, amount: number, feeSatPerVByte: number = 200): Promise<string> {
+    const { tx } = await this.constructSendMonaTx(toAddress, amount, feeSatPerVByte)
+    const signedTxHex = this.signTx(tx)
+    const txId = await this.broadcastTx(signedTxHex)
+    this.updateLocalTxos(tx, txId)
+    this.mergeLocalTxos()
+    this.calcBalance()
+    return txId
+  }
+
+  async constructSendMonaTx(
+    toAddress: string,
+    amount: number,
+    feeSatPerVByte: number = 200,
+  ): Promise<{ tx: btcSigner.Transaction; feeSat: number }> {
     const amountSat = Math.floor(amount * SATOSHI)
     if (amountSat <= 0) throw new Error('Amount must be greater than 0')
     const availableUtxos = this.utxos.filter((u) => this.useUnconfUtxo || u.confirmed)
@@ -231,19 +245,14 @@ export class MonaWallet extends MonaWalletRo {
     if (changeSat < 0)
       throw new Error(`Insufficient balance. Need ${(amountSat + feeSat) / SATOSHI} MONA, have ${inputTotal / SATOSHI} MONA`)
     if (changeSat > 546) tx.addOutputAddress(this.address, BigInt(changeSat), MONA_NETWORK) // ダストでなければお釣りを回収
-    const txId = await this.signAndBroadcastTx(tx)
-    return txId
+    return { tx, feeSat }
   }
 
-  async signAndBroadcastTx(tx: btcSigner.Transaction): Promise<string> {
+  signTx(tx: btcSigner.Transaction): string {
     for (let i = 0; i < tx.inputsLength; i++) tx.signIdx(this.privateKey, i)
     tx.finalize()
     const signedTxHex = hexEncoder.encode(tx.extract())
-    const txId = await this.broadcastTx(signedTxHex)
-    this.updateLocalTxos(tx, txId)
-    this.mergeLocalTxos()
-    this.calcBalance()
-    return txId
+    return signedTxHex
   }
 
   updateLocalTxos(tx: btcSigner.Transaction, txId: string): void {
@@ -283,6 +292,16 @@ export class MonaWallet extends MonaWalletRo {
   }
 
   async signAndBroadcastMonapartyTxHex(txHex: string): Promise<string> {
+    const newTx = await this.reconstructTxFromMonapartyTxHex(txHex)
+    const signedTxHex = this.signTx(newTx)
+    const txId = await this.broadcastTx(signedTxHex)
+    this.updateLocalTxos(newTx, txId)
+    this.mergeLocalTxos()
+    this.calcBalance()
+    return txId
+  }
+
+  async reconstructTxFromMonapartyTxHex(txHex: string): Promise<btcSigner.Transaction> {
     // createXXXで生成されたtxHexは形式が古いのでPSBTで再構築する
     await this.updateBalance() // UTXOを最新化
     const txBytes = hexEncoder.decode(txHex)
@@ -325,7 +344,7 @@ export class MonaWallet extends MonaWalletRo {
         newTx.addOutput({ script: output.script, amount: output.amount })
       }
     }
-    return await this.signAndBroadcastTx(newTx)
+    return newTx
   }
 
   // MARK: MonapartyWrappers

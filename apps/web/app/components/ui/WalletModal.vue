@@ -126,10 +126,11 @@
 import { X, ArrowLeft, RefreshCw, LockKeyhole, LockKeyholeOpen, LogOut, QrCode, Copy } from 'lucide-vue-next'
 import { validateAddress } from '@/lib/monawallet'
 import { CSS_TOKENS, formatBalance } from '@/lib/util'
-import { managedLoginKey, managedLogoutKey, managedLockWalletKey } from '@/lib/injectionKeys'
+import { managedLoginKey, managedLogoutKey, managedLockWalletKey, tipMonaKey } from '@/lib/injectionKeys'
 const managedLogin = inject(managedLoginKey)
 const managedLogout = inject(managedLogoutKey)
 const managedLockWallet = inject(managedLockWalletKey)
+const tipMona = inject(tipMonaKey)
 type PanelName = 'root' | 'show_qr' | 'send_mona'
 
 const { confirm } = useConfirm()
@@ -206,14 +207,15 @@ const handleSend = async () => {
   isActionLoading.value = true
   toast.loading('モナコインを送信中', isActionLoading)
   try {
-    const txId = await walletValue.sendMona(destination, amountNum)
+    if (!tipMona) throw new Error('tipMona function not available')
+    const txId = await tipMona(destination, amountNum)
     toast.success(`${amountNum} MONA を送りました`)
     console.info(`txid: ${txId}`)
     sendTo.value = ''
     sendAmount.value = ''
   } catch (error) {
     console.error('Failed to send MONA', error)
-    toast.error('送信に失敗しました')
+    toast.error('モナコインを送れませんでした')
   } finally {
     isActionLoading.value = false
   }

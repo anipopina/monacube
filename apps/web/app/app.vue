@@ -46,15 +46,24 @@
 <script setup lang="ts">
 import { LogOut, KeyRound, Settings } from 'lucide-vue-next'
 import { PrfNotSupportedError } from '@/lib/passkey'
-import { managedCreatePasskeyKey, managedLoginKey, managedLogoutKey, managedLockWalletKey, openWalletModalKey } from '@/lib/injectionKeys'
+import {
+  managedCreatePasskeyKey,
+  managedLoginKey,
+  managedLogoutKey,
+  managedLockWalletKey,
+  openWalletModalKey,
+  tipMonaKey,
+} from '@/lib/injectionKeys'
 import { CURRENT_TERMS_VERSION } from '@shared/legal/terms'
 import { CURRENT_PRIVACY_VERSION } from '@shared/legal/privacy'
 
 useColorMode()
-const { user, isLoading, createPasskey, login, logout, lockWallet } = useWalletAuth()
+const { user, wallet, isLoading, createPasskey, login, logout, lockWallet } = useWalletAuth()
 const walletModalRef = ref<{ openModal: () => Promise<void> } | null>(null)
 const legalAcceptModalRef = ref<{ openModal: () => Promise<void> } | null>(null)
 const toast = useToast()
+const api = useApi()
+
 const openWalletModal = () => walletModalRef.value?.openModal()
 const openLegalAcceptModal = () => legalAcceptModalRef.value?.openModal()
 
@@ -107,9 +116,25 @@ const managedLockWallet = () => {
   toast.success('ウォレットをロックしました')
 }
 
+const tipMona = async (destination: string, amount: number): Promise<string> => {
+  // sendMona() 相当の処理をAPI経由で行う
+  // 複数の送金ユースケースがあるので入力値のバリデーションや例外処理は呼び出し元に任せる
+  const walletValue = wallet.value
+  if (!walletValue) throw new Error('Wallet not available')
+  const { tx, feeSat } = await walletValue.constructSendMonaTx(destination, amount)
+  const signedTxHex = walletValue.signTx(tx)
+  const { tip } = await api.postTips({ signedTxHex, feeSat })
+  const txId = tip.txId
+  walletValue.updateLocalTxos(tx, txId)
+  walletValue.mergeLocalTxos()
+  walletValue.calcBalance()
+  return txId
+}
+
 provide(managedCreatePasskeyKey, managedCreatePasskey)
 provide(managedLoginKey, managedLogin)
 provide(managedLogoutKey, managedLogout)
 provide(managedLockWalletKey, managedLockWallet)
 provide(openWalletModalKey, openWalletModal)
+provide(tipMonaKey, tipMona)
 </script>

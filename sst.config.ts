@@ -118,7 +118,7 @@ export default $config({
       },
     })
 
-    // public API routes (no authentication required)
+    // ==== public API routes (no authentication required) ====
     api.route('GET /health', 'packages/functions/src/api/health.handler')
     api.route('POST /auth/challenge', 'packages/functions/src/api/auth_challenge.handler')
     api.route('POST /auth/verify', 'packages/functions/src/api/auth_verify.handler')
@@ -126,7 +126,7 @@ export default $config({
     api.route('GET /works/{workId}', 'packages/functions/src/api/work-get.handler')
     api.route('GET /users/{userId}', 'packages/functions/src/api/user.handler')
 
-    // private API routes (authentication required)
+    // ==== private API routes (authentication required) ====
     api.route('POST /works/uploads/init', 'packages/functions/src/api/works_uploads_init.handler')
     api.route('POST /works/uploads/finalize', {
       ...apiRouteDefaults,
@@ -140,6 +140,7 @@ export default $config({
     // api.route('POST /me/icon/uploads/init', 'packages/functions/src/api/me_icon_uploads_init.handler')
     // api.route('POST /me/icon/uploads/finalize', 'packages/functions/src/api/me_icon_uploads_finalize.handler')
     api.route('POST /me/legal/accept', 'packages/functions/src/api/me_legal_accept.handler')
+    api.route('POST /tips', 'packages/functions/src/api/tips.handler')
 
     // ========= Frontend (Nuxt SPA Static) =========
     const web = new sst.aws.StaticSite('Web', {

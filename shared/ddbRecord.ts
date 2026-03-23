@@ -100,8 +100,10 @@ export type TipRecord = DdbBaseRecord<'TIP', UserPk, `TIP#${Iso8601String}#${Hex
   fromAddr: MonaAddress // sender userId
   toAddr: MonaAddress // receiver userId
   amountSat: number
+  feeSat: number
   workId?: Ulid // present when tipping a work
   message?: string
+  external?: boolean // set to true if the tip was made to/from an external address (not a user in the system)
 }
 
 // nonce record for auth challenge session

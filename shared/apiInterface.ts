@@ -3,6 +3,13 @@
 
 import type { UserRecord, UserStatsRecord, WorkRecord, TipRecord } from './ddbRecord'
 
+export type Iso8601String = string
+export type ContentType = string
+export type Ulid = string
+export type Hex = string
+export type MonaAddress = string
+export type UnixTimestamp = number
+
 // MARK: public API
 
 // GET /health
@@ -10,18 +17,18 @@ export type GetHealthOk = { ok: true }
 
 // POST /auth/challenge
 export type AuthChallengeReqBody = {
-  address: string
+  address: MonaAddress
 }
 export type AuthChallengeOk = {
-  nonce: string
+  nonce: Hex
   message: string
-  expiresAt: number
+  expiresAt: UnixTimestamp
 }
 
 // POST /auth/verify
 export type AuthVerifyReqBody = {
-  address: string
-  nonce: string
+  address: MonaAddress
+  nonce: Hex
   message: string
   signature: string
 }
@@ -62,15 +69,15 @@ export type GetUserReqQuery = {
 
 // POST /works/uploads/init
 export type WorksUploadsInitReqBody = {
-  contentType: string
+  contentType: ContentType
   declaredBytes: number
 }
 export type WorksUploadsInitOk = {
-  uploadId: string
+  uploadId: Ulid
   uploadUrl: string
   method: 'PUT'
   headers: {
-    'content-type': string
+    'content-type': ContentType
   }
   s3Key: string
   expiresIn: number
@@ -78,7 +85,7 @@ export type WorksUploadsInitOk = {
 
 // POST /works/uploads/finalize
 export type WorksUploadsFinalizeReqBody = {
-  uploadId: string
+  uploadId: Ulid
   title: string
   description: string
 }
@@ -95,9 +102,20 @@ export type GetMeTipsOk = {
 export type MeLegalAcceptReqBody = {
   termsVersion: string
   privacyVersion: string
-  signedAt: string // ISO8601 string
+  signedAt: Iso8601String
   signature: string
 }
 export type MeLegalAcceptOk = {
   userStats: UserStatsRecord
+}
+
+// POST /tips
+export type TipsReqBody = {
+  signedTxHex: Hex
+  feeSat: number
+  workId?: Ulid
+  message?: string
+}
+export type TipsOk = {
+  tip: TipRecord
 }

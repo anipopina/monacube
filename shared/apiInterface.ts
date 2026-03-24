@@ -98,6 +98,11 @@ export type GetMeTipsOk = {
   tips: TipRecord[]
 }
 
+// POST /me/balance/refresh
+export type MeBalanceRefreshOk = {
+  userStats: UserStatsRecord
+}
+
 // POST /me/legal/accept
 export type MeLegalAcceptReqBody = {
   termsVersion: string

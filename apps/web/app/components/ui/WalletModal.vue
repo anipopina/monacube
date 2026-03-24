@@ -126,11 +126,12 @@
 import { X, ArrowLeft, RefreshCw, LockKeyhole, LockKeyholeOpen, LogOut, QrCode, Copy } from 'lucide-vue-next'
 import { validateAddress } from '@/lib/monawallet'
 import { CSS_TOKENS, formatBalance } from '@/lib/util'
-import { managedLoginKey, managedLogoutKey, managedLockWalletKey, tipMonaKey } from '@/lib/injectionKeys'
+import { managedLoginKey, managedLogoutKey, managedLockWalletKey, tipMonaKey, updateMonaBalanceKey } from '@/lib/injectionKeys'
 const managedLogin = inject(managedLoginKey)
 const managedLogout = inject(managedLogoutKey)
 const managedLockWallet = inject(managedLockWalletKey)
 const tipMona = inject(tipMonaKey)
+const updateMonaBalance = inject(updateMonaBalanceKey)
 type PanelName = 'root' | 'show_qr' | 'send_mona'
 
 const { confirm } = useConfirm()
@@ -176,10 +177,11 @@ const refreshBalance = async () => {
   isActionLoading.value = true
   toast.loading('残高を更新中', isActionLoading)
   try {
-    await walletInstance.value.updateBalance()
+    if (!updateMonaBalance) throw new Error('updateMonaBalance function not available')
+    await updateMonaBalance()
   } catch (error) {
-    console.error('Failed to refresh balance', error)
-    toast.error('残高の取得に失敗しました')
+    console.error('Failed to refresh Mona balance:', error)
+    toast.error('MONA残高の更新に失敗しました', 10_000)
   } finally {
     isActionLoading.value = false
   }
@@ -252,7 +254,7 @@ const openModal = async () => {
   if (!dialogRef.value) return
   dialogRef.value.showModal()
   isOpen.value = true
-  await refreshBalance()
+  // await refreshBalance()
 }
 
 const closeModal = () => {

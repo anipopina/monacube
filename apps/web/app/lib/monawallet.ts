@@ -35,6 +35,8 @@ export class MonaWalletRo {
   // mona
   balance = 0
   unconfBalance = 0
+  balanceSat = 0
+  unconfBalanceSat = 0
   utxos: Utxo[] = []
   usedTxos: UtxoUsed[] = []
   changeTxos: Utxo[] = []
@@ -82,6 +84,8 @@ export class MonaWalletRo {
     const unconfSat = this.utxos.filter((u) => !u.confirmed).reduce((sum, u) => sum + u.value, 0)
     this.balance = confirmedSat / 100_000_000
     this.unconfBalance = unconfSat / 100_000_000
+    this.balanceSat = confirmedSat
+    this.unconfBalanceSat = unconfSat
   }
 
   async updateAssetBalances(): Promise<void> {
@@ -178,6 +182,8 @@ export class MonaWallet extends MonaWalletRo {
     const walletRo = new MonaWalletRo(this.address)
     walletRo.balance = this.balance
     walletRo.unconfBalance = this.unconfBalance
+    walletRo.balanceSat = this.balanceSat
+    walletRo.unconfBalanceSat = this.unconfBalanceSat
     walletRo.utxos = this.utxos
     walletRo.usedTxos = this.usedTxos
     walletRo.changeTxos = this.changeTxos

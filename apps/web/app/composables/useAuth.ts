@@ -72,12 +72,8 @@ export const useAuth = () => {
 
   const updateUserRecords = (records: { userRecord?: UserRecord; userStatsRecord?: UserStatsRecord }) => {
     if (!user.value) return
-    // compute()の再計算をトリガーするためにuser.valueごと更新する
-    user.value = {
-      ...user.value,
-      userRecord: records.userRecord ?? user.value.userRecord,
-      userStatsRecord: records.userStatsRecord ?? user.value.userStatsRecord,
-    }
+    if (records.userRecord) user.value.userRecord = records.userRecord
+    if (records.userStatsRecord) user.value.userStatsRecord = records.userStatsRecord
     // 更新後のユーザーデータをlocalStorageに保存
     localStorage.setItem(STOREKEY_AUTH_USER, JSON.stringify(user.value))
   }

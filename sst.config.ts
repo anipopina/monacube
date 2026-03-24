@@ -94,11 +94,11 @@ export default $config({
       IMG_BUCKET: imageBucket.name,
     }
 
-    // API: API Gateway + Lambda
     const apiRouteDefaults = {
       link: [appTable, JWT_SECRET, imageBucket],
       environment: functionEnv,
       memory: '1024 MB' as const,
+      timeout: '10 seconds' as const,
     }
     const api = new sst.aws.ApiGatewayV2('Api', {
       domain: { name: apiDomain },
@@ -113,6 +113,7 @@ export default $config({
             args.link ??= apiRouteDefaults.link
             args.environment ??= apiRouteDefaults.environment
             args.memory ??= apiRouteDefaults.memory
+            args.timeout ??= apiRouteDefaults.timeout
           },
         },
       },
@@ -137,10 +138,23 @@ export default $config({
     // api.route('PUT /works/{workId}', 'packages/functions/src/api/work-put.handler')
     api.route('DELETE /works/{workId}', 'packages/functions/src/api/work-delete.handler')
     api.route('GET /me/tips', 'packages/functions/src/api/me_tips.handler')
+    api.route('POST /me/balance/refresh', 'packages/functions/src/api/me_balance_refresh.handler')
+    api.route('POST /me/legal/accept', 'packages/functions/src/api/me_legal_accept.handler')
     // api.route('POST /me/icon/uploads/init', 'packages/functions/src/api/me_icon_uploads_init.handler')
     // api.route('POST /me/icon/uploads/finalize', 'packages/functions/src/api/me_icon_uploads_finalize.handler')
-    api.route('POST /me/legal/accept', 'packages/functions/src/api/me_legal_accept.handler')
     api.route('POST /tips', 'packages/functions/src/api/tips.handler')
+
+    // ========= Batch (EventBridge Cron) =========
+    new sst.aws.Cron('UpdateMonaBalance', {
+      schedule: 'cron(35 * * * ? *)',
+      job: {
+        handler: 'packages/functions/src/batch/updateMonaBalance.handler',
+        link: [appTable, imageBucket],
+        environment: functionEnv,
+        memory: '1024 MB',
+        timeout: '1 minutes',
+      },
+    })
 
     // ========= Frontend (Nuxt SPA Static) =========
     const web = new sst.aws.StaticSite('Web', {

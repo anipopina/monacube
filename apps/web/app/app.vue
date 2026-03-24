@@ -53,12 +53,13 @@ import {
   managedLockWalletKey,
   openWalletModalKey,
   tipMonaKey,
+  updateMonaBalanceKey,
 } from '@/lib/injectionKeys'
 import { CURRENT_TERMS_VERSION } from '@shared/legal/terms'
 import { CURRENT_PRIVACY_VERSION } from '@shared/legal/privacy'
 
 useColorMode()
-const { user, wallet, isLoading, createPasskey, login, logout, lockWallet } = useWalletAuth()
+const { user, wallet, walletRo, isLoading, createPasskey, login, logout, lockWallet, updateUserRecords } = useWalletAuth()
 const route = useRoute()
 const toast = useToast()
 const api = useApi()
@@ -99,7 +100,12 @@ const managedLogin = async () => {
   try {
     await login()
     toast.success(`${user.value?.address || ''} でログインしました`)
+
     checkLegalAcceptance()
+    updateMonaBalance().catch((error) => {
+      console.error('Failed to update Mona balance after login:', error)
+      toast.error('ログイン後の残高の更新に失敗しました', 10_000)
+    })
   } catch (error) {
     if (error instanceof PrfNotSupportedError) {
       toast.error('お使いのブラウザ/デバイスは本サービスに必要な WebAuthn PRF をサポートしていません。別の環境でお試しください', 10_000)
@@ -129,17 +135,35 @@ const managedLockWallet = () => {
 
 const tipMona = async (destination: string, amount: number): Promise<string> => {
   // sendMona() 相当の処理をAPI経由で行う
-  // 複数の送金ユースケースがあるので入力値のバリデーションや例外処理は呼び出し元に任せる
+  // 複数のユースケースがあるので入力値のバリデーションや例外処理は呼び出し元に任せる
   const walletValue = wallet.value
   if (!walletValue) throw new Error('Wallet not available')
   const { tx, feeSat } = await walletValue.constructSendMonaTx(destination, amount)
   const signedTxHex = walletValue.signTx(tx)
+
   const { tip } = await api.postTips({ signedTxHex, feeSat })
   const txId = tip.txId
+
   walletValue.updateLocalTxos(tx, txId)
   walletValue.mergeLocalTxos()
   walletValue.calcBalance()
   return txId
+}
+
+const updateMonaBalance = async () => {
+  // ローカルで残高を更新し、サーバに保存された残高から変化していれば更新用APIを呼び出す
+  // 複数のユースケースがあるので例外処理は呼び出し元に任せる
+  if (!user.value) return
+  const walletInstanceValue = wallet.value || walletRo.value
+  if (!walletInstanceValue) return
+
+  await walletInstanceValue.updateBalance()
+  const remoteBalanceSat = user.value.userStatsRecord.balanceSat
+  if (walletInstanceValue.balanceSat === remoteBalanceSat) return
+
+  console.info(`MONA balance diff: local ${walletInstanceValue.balanceSat} sat, remote ${remoteBalanceSat} sat`)
+  const { userStats } = await api.postMeBalanceRefresh()
+  updateUserRecords({ userStatsRecord: userStats })
 }
 
 watch(
@@ -151,6 +175,10 @@ watch(
 
 onMounted(() => {
   checkLegalAcceptance()
+  updateMonaBalance().catch((error) => {
+    console.error('Failed to update Mona balance after login:', error)
+    toast.error('ログイン後の残高の更新に失敗しました', 10_000)
+  })
 })
 
 provide(managedCreatePasskeyKey, managedCreatePasskey)
@@ -159,4 +187,5 @@ provide(managedLogoutKey, managedLogout)
 provide(managedLockWalletKey, managedLockWallet)
 provide(openWalletModalKey, openWalletModal)
 provide(tipMonaKey, tipMona)
+provide(updateMonaBalanceKey, updateMonaBalance)
 </script>

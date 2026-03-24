@@ -59,13 +59,29 @@ import { CURRENT_PRIVACY_VERSION } from '@shared/legal/privacy'
 
 useColorMode()
 const { user, wallet, isLoading, createPasskey, login, logout, lockWallet } = useWalletAuth()
-const walletModalRef = ref<{ openModal: () => Promise<void> } | null>(null)
-const legalAcceptModalRef = ref<{ openModal: () => Promise<void> } | null>(null)
+const route = useRoute()
 const toast = useToast()
 const api = useApi()
 
+const walletModalRef = ref<{ openModal: () => Promise<void> } | null>(null)
+const legalAcceptModalRef = ref<{ openModal: () => Promise<void> } | null>(null)
+
 const openWalletModal = () => walletModalRef.value?.openModal()
 const openLegalAcceptModal = () => legalAcceptModalRef.value?.openModal()
+
+const checkLegalAcceptance = () => {
+  if (!user.value) return
+  if (route.path === '/terms' || route.path === '/privacy') return
+  if (user.value.userStatsRecord.termsVer !== CURRENT_TERMS_VERSION || user.value.userStatsRecord.privacyVer !== CURRENT_PRIVACY_VERSION) {
+    if (!wallet.value) {
+      // ログイン時に表示された同意モーダルを無視したまま操作している場合
+      logout()
+      toast.warning('利用規約・プライバシーポリシーが更新されました。再ログインしてご確認ください', 10_000)
+      return
+    }
+    openLegalAcceptModal()
+  }
+}
 
 const managedCreatePasskey = async () => {
   toast.loading('Passkey 登録中', isLoading)
@@ -83,12 +99,7 @@ const managedLogin = async () => {
   try {
     await login()
     toast.success(`${user.value?.address || ''} でログインしました`)
-    if (
-      user.value?.userStatsRecord.termsVer !== CURRENT_TERMS_VERSION ||
-      user.value?.userStatsRecord.privacyVer !== CURRENT_PRIVACY_VERSION
-    ) {
-      openLegalAcceptModal()
-    }
+    checkLegalAcceptance()
   } catch (error) {
     if (error instanceof PrfNotSupportedError) {
       toast.error('お使いのブラウザ/デバイスは本サービスに必要な WebAuthn PRF をサポートしていません。別の環境でお試しください', 10_000)
@@ -130,6 +141,17 @@ const tipMona = async (destination: string, amount: number): Promise<string> => 
   walletValue.calcBalance()
   return txId
 }
+
+watch(
+  () => route.path,
+  () => {
+    checkLegalAcceptance()
+  },
+)
+
+onMounted(() => {
+  checkLegalAcceptance()
+})
 
 provide(managedCreatePasskeyKey, managedCreatePasskey)
 provide(managedLoginKey, managedLogin)

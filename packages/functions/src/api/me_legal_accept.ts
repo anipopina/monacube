@@ -38,7 +38,7 @@ export const handler = privateApiHandler(async (event, auth) => {
 
   const acceptanceRecord: LegalAcceptanceRecord = {
     pk: `USER#${userId}`,
-    sk: `LEGAL#${signedAt}`,
+    sk: `LEGAL#${termsVersion}#${privacyVersion}`,
     type: 'LEGAL_ACCEPTANCE',
     userId,
     termsVersion,

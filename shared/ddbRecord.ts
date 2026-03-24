@@ -127,8 +127,8 @@ export type UploadRecord = DdbBaseRecord<'UPLOAD', UploadPk, 'META'> & {
 }
 
 // legal document acceptance record
-// sk format: LEGAL#<acceptedAt>
-export type LegalAcceptanceRecord = DdbBaseRecord<'LEGAL_ACCEPTANCE', UserPk, `LEGAL#${Iso8601String}`> & {
+// sk format: LEGAL#<termsVersion>#<privacyVersion>
+export type LegalAcceptanceRecord = DdbBaseRecord<'LEGAL_ACCEPTANCE', UserPk, `LEGAL#${string}#${string}`> & {
   userId: MonaAddress
   termsVersion: string
   privacyVersion: string

@@ -6,7 +6,7 @@
         <label class="lc-field">
           <span class="lc-field-label">Image *</span>
           <input ref="fileInput" type="file" accept="image/jpeg,image/png,image/webp" :disabled="isLoading" @change="onChangeFile" />
-          <small class="lc-field-help"> JPEG / PNG / WEBP, max {{ Math.floor(WORK_IMAGE_MAX_BYTES / (1024 * 1024)) }} MB </small>
+          <small class="lc-field-help"> JPEG / PNG / WEBP, max {{ WORK_IMAGE_MAX_BYTES / (1024 * 1024) }} MB </small>
         </label>
 
         <div v-if="previewUrl" class="lc-preview-wrap">
@@ -37,6 +37,17 @@
         </div>
       </form>
 
+      <div class="lc-notes">
+        <p class="lc-note">
+          MonaCubeでは投稿画像をできるだけ未変換で保存しますが、表示は適宜最適化されます。ページ上に投稿画像をそのまま表示したい場合は、画像サイズを{{
+            WORK_IMAGE_SHOWORIGINAL_MAX_BYTES / (1024 * 1024)
+          }}MB以下にしてください。
+        </p>
+        <p class="lc-note">
+          Web表示に不適または個人に繋がる可能性のあるメタデータを含む画像は、サイズによらず変換してから保存されます。クォータ消費量も変換後の画像サイズで計算されます。
+        </p>
+      </div>
+
       <UiLoadingOverlay :show="isLoading" />
     </section>
   </div>
@@ -44,7 +55,15 @@
 
 <script setup lang="ts">
 import { ImagePlus } from 'lucide-vue-next'
-import { WORK_DESCRIPTION_MAX_LENGTH, WORK_IMAGE_ALLOWEDCONTENTTYPES, WORK_IMAGE_MAX_BYTES, WORK_TITLE_MAX_LENGTH } from '@shared/const'
+import {
+  WORK_DESCRIPTION_MAX_LENGTH,
+  WORK_IMAGE_ALLOWEDCONTENTTYPES,
+  WORK_IMAGE_MAX_BYTES,
+  WORK_IMAGE_MAX_HEIGHT,
+  WORK_IMAGE_MAX_WIDTH,
+  WORK_TITLE_MAX_LENGTH,
+  WORK_IMAGE_SHOWORIGINAL_MAX_BYTES,
+} from '@shared/const'
 
 const router = useRouter()
 const toast = useToast()
@@ -63,7 +82,28 @@ const canSubmit = computed(() => {
   return Boolean(selectedFile.value) && title.value.length > 0
 })
 
-const onChangeFile = (event: Event) => {
+const getImageResolution = (file: File): Promise<{ width: number; height: number }> => {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file)
+    const image = new Image()
+
+    image.onload = () => {
+      const width = image.naturalWidth
+      const height = image.naturalHeight
+      URL.revokeObjectURL(objectUrl)
+      resolve({ width, height })
+    }
+
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('invalid_image'))
+    }
+
+    image.src = objectUrl
+  })
+}
+
+const onChangeFile = async (event: Event) => {
   const target = event.target as HTMLInputElement | null
   const file = target?.files?.[0]
   if (!file) {
@@ -79,8 +119,26 @@ const onChangeFile = (event: Event) => {
     clearPreview()
     return
   }
+
   if (file.size <= 0 || file.size > WORK_IMAGE_MAX_BYTES) {
     toast.error(`画像サイズが不正です（最大 ${Math.floor(WORK_IMAGE_MAX_BYTES / (1024 * 1024))}MB）`)
+    target.value = ''
+    selectedFile.value = null
+    clearPreview()
+    return
+  }
+
+  try {
+    const { width, height } = await getImageResolution(file)
+    if (width <= 0 || height <= 0 || width > WORK_IMAGE_MAX_WIDTH || height > WORK_IMAGE_MAX_HEIGHT) {
+      toast.error(`画像解像度が不正です（最大 ${WORK_IMAGE_MAX_WIDTH} x ${WORK_IMAGE_MAX_HEIGHT}px）`)
+      target.value = ''
+      selectedFile.value = null
+      clearPreview()
+      return
+    }
+  } catch {
+    toast.error('画像の読み込みに失敗しました')
     target.value = ''
     selectedFile.value = null
     clearPreview()
@@ -214,5 +272,15 @@ watch(
   max-height: 320px;
   width: auto;
   border-radius: var(--radius-sm);
+}
+
+.lc-notes {
+  margin-block: var(--space-4);
+}
+
+.lc-note {
+  font-size: var(--font-size-sm);
+  color: var(--color-muted);
+  margin-block: var(--space-3);
 }
 </style>

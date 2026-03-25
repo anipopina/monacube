@@ -25,8 +25,40 @@
       <div class="lc-monabalance-quotabar">
         <div class="lc-monabalance-usedbar" :style="{ width: `${bytesUsedPercent}%` }"></div>
       </div>
-      <div class="lc-quota-text">{{ formatBytes(usedBytes) }} / {{ formatBytes(quotaBytes) }}</div>
-      <div class="lc-quota-text">( {{ usedCount }} / {{ quotaCount }} works )</div>
+      <div class="lc-quota-text">
+        <span :class="{ 'gc-danger': remainingQuotaBytes <= 0 }">{{ formatBytes(usedBytes) }}</span> / {{ formatBytes(quotaBytes) }}
+      </div>
+      <div class="lc-quota-text">
+        ( <span :class="{ 'gc-danger': remainingQuotaCount <= 0 }">{{ usedCount }}</span> / {{ quotaCount }} works )
+      </div>
+
+      <div v-if="quotaCount === 0" class="lc-quota-notes">
+        <div class="lc-quota-note">
+          MonaCubeに作品を投稿するには、ウォレットにモナコインを保有する必要があります。残高{{ QUOTA_UNIT_SAT / 100_000_000 }}MONAごとに{{
+            QUOTA_UNIT_BYTES / (1024 * 1024)
+          }}MB/{{ QUOTA_UNIT_COUNTS }}枚の投稿ができます。
+        </div>
+        <div class="lc-quota-note">{{ BALANCE_REFRESH_ADVICE }}</div>
+      </div>
+      <div v-else-if="remainingQuotaCount === 0" class="lc-quota-notes">
+        <div class="lc-quota-note">
+          投稿できる作品数の上限に達しています。新しい作品を投稿するには、既存の作品を削除するか、ウォレットにモナコインを追加してください。
+        </div>
+        <div class="lc-quota-note">{{ BALANCE_REFRESH_ADVICE }}</div>
+      </div>
+      <div v-else-if="remainingQuotaBytes === 0" class="lc-quota-notes">
+        <div class="lc-quota-note">
+          投稿できる総データ量の上限に達しています。新しい作品を投稿するには、既存の作品を削除するか、ウォレットにモナコインを追加してください。
+        </div>
+        <div class="lc-quota-note">{{ BALANCE_REFRESH_ADVICE }}</div>
+      </div>
+      <div v-if="isQuotaExceeded" class="lc-quota-notes">
+        <div class="lc-quota-note gc-danger">
+          クォータの上限を超過しています。既存の作品を削除するか、ウォレットにモナコインを追加してください。
+        </div>
+        <div class="lc-quota-note gc-danger">クォータを超過した状態が続く場合、投稿済みの作品が自動的に削除される場合があります。</div>
+        <div class="lc-quota-note">{{ BALANCE_REFRESH_ADVICE }}</div>
+      </div>
     </section>
 
     <section v-if="userRecord" class="gc-section-framed lc-section-artworks">
@@ -36,11 +68,11 @@
       </div>
 
       <div v-if="userWorks" class="gc-works-grid">
-        <NuxtLink key="new" to="/works/new" class="gc-work-tile" title="Upload new artwork">
+        <a href="/works/new" class="gc-work-tile" title="Upload new artwork" @click.prevent="onClickNewWork">
           <span class="lc-new-work-inner">
             <Plus class="lc-new-work-icon" />
           </span>
-        </NuxtLink>
+        </a>
         <NuxtLink v-for="work in userWorks" :key="work.workId" :to="`/works/${work.workId}`" class="gc-work-tile" :title="work.title">
           <img :src="toThumbUrl(work.workId, work.updatedAt)" :alt="work.title" loading="lazy" />
         </NuxtLink>
@@ -53,15 +85,19 @@
 
 <script setup lang="ts">
 import { Birdhouse, Wallet, Plus, LogOut } from 'lucide-vue-next'
-import { getQuota } from '@shared/const'
+import { getQuota, QUOTA_UNIT_SAT, QUOTA_UNIT_BYTES, QUOTA_UNIT_COUNTS } from '@shared/const'
 import { openWalletModalKey, managedLogoutKey } from '@/lib/injectionKeys'
 import { toNuxtError, workImageUrl, formatBalanceSat, formatBytes } from '@/lib/util'
+
+const BALANCE_REFRESH_ADVICE =
+  '残高の更新はあんまりリアルタイムではないため、ブロックチェーンでの承認をゆっくりと待った後で更新ボタンを押してください。'
 
 const managedLogout = inject(managedLogoutKey)
 const openWalletModal = inject(openWalletModalKey)
 
 const router = useRouter()
-const { user: authUser, isLoading: isAuthLoading, wallet, walletRo, updateUserRecords } = useWalletAuth()
+const toast = useToast()
+const { user: authUser, isLoading: isAuthLoading, updateUserRecords } = useWalletAuth()
 const api = useApi()
 const runtimeConfig = useRuntimeConfig()
 
@@ -72,7 +108,6 @@ const userIconUrl = computed(() => {
   if (!userRecord.value?.iconKey) return ''
   return `${runtimeConfig.public.imgBase}/${userRecord.value.iconKey}?cb=${userRecord.value.updatedAt}`
 })
-const walletInstance = computed(() => wallet.value || walletRo.value || null)
 const balanceStr = computed(() => {
   if (!userStatsRecord.value) return '--'
   return formatBalanceSat(userStatsRecord.value.balanceSat)
@@ -87,8 +122,15 @@ const quotaCount = computed(() => {
 })
 const usedBytes = computed(() => userStatsRecord.value?.totalBytes ?? 0)
 const usedCount = computed(() => userStatsRecord.value?.workCount ?? 0)
+const remainingQuotaBytes = computed(() => quotaBytes.value - usedBytes.value)
+const remainingQuotaCount = computed(() => quotaCount.value - usedCount.value)
+const isQuotaExceeded = computed(() => remainingQuotaBytes.value < 0 || remainingQuotaCount.value < 0)
 const bytesUsedPercent = computed(() => {
-  if (!userStatsRecord.value || quotaBytes.value <= 0) return 100
+  if (!userStatsRecord.value) return 0
+  if (quotaBytes.value <= 0) {
+    if (usedBytes.value > 0) return 100
+    else return 0
+  }
   return (usedBytes.value / quotaBytes.value) * 100
 })
 
@@ -109,6 +151,15 @@ const userWorks = computed(() => data.value?.userWorks ?? null)
 
 const toThumbUrl = (workId: string, cacheBuster: string): string => {
   return workImageUrl(runtimeConfig.public.imgBase, workId, 'thumb', cacheBuster)
+}
+
+const onClickNewWork = () => {
+  if (remainingQuotaCount.value <= 0 || remainingQuotaBytes.value <= 0) {
+    toast.warning('投稿クォータが不足しています。既存の作品を削除するか、ウォレットにモナコインを追加してください。', 10_000)
+    toast.info(BALANCE_REFRESH_ADVICE, 10_000)
+    return
+  }
+  router.push('/works/new')
 }
 
 watch(
@@ -192,6 +243,17 @@ watch(
   text-align: right;
   color: var(--color-muted);
   font-size: var(--font-size-sm);
+}
+
+.lc-quota-notes {
+  font-size: var(--font-size-sm);
+  color: var(--color-muted);
+  margin-block: var(--space-3);
+}
+
+.lc-quota-note {
+  margin: 0;
+  margin-block: var(--space-2);
 }
 
 .lc-monabalance-quotabar {

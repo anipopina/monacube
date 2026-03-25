@@ -4,6 +4,7 @@ export const WORK_IMAGE_MAX_BYTES = 20 * 1024 * 1024
 export const WORK_IMAGE_MAX_WIDTH = 6000
 export const WORK_IMAGE_MAX_HEIGHT = 6000
 export const WORK_IMAGE_ALLOWEDCONTENTTYPES = ['image/jpeg', 'image/png', 'image/webp'] // includes()の型エラーが面倒なので as const は使用しない
+export const WORK_IMAGE_SHOWORIGINAL_MAX_BYTES = 2 * 1024 * 1024
 
 export const workId2imageKey = (workId: string, size: 'original' | 'large' | 'medium' | 'thumb'): string => {
   switch (size) {
@@ -28,9 +29,12 @@ export const getNextMonaCheckIso = () => {
   return new Date(nextCheckUnix * 1000).toISOString()
 }
 
+export const QUOTA_UNIT_SAT = 10_000_000 // 0.1MONAあたり1枚、1MBのクォータを与える
+export const QUOTA_UNIT_COUNTS = 1
+export const QUOTA_UNIT_BYTES = 1024 * 1024
 export const getQuota = (monaSat: number): { bytes: number; count: number } => {
-  const count = Math.floor(monaSat / 10_000_000) // 0.1MONAあたり1枚
-  const bytes = count * 1024 * 1024 // 0.1MONAあたり1MB
+  const count = Math.floor(monaSat / QUOTA_UNIT_SAT) * QUOTA_UNIT_COUNTS
+  const bytes = count * QUOTA_UNIT_BYTES
   return { bytes, count }
 }
 

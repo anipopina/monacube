@@ -3,7 +3,7 @@
     <section v-if="work" class="gc-section-noframe">
       <div class="lc-media-wrap">
         <picture>
-          <source v-if="workLargeImageUrl && !isUnder1MB" :srcset="workLargeImageUrl" type="image/webp" />
+          <source v-if="workLargeImageUrl && !isOriginalLight" :srcset="workLargeImageUrl" type="image/webp" />
           <img class="lc-image" :src="workOriginalImageUrl" :alt="work.title" loading="eager" />
         </picture>
       </div>
@@ -61,6 +61,7 @@
 <script setup lang="ts">
 import { ExternalLink, Trash2 } from 'lucide-vue-next'
 import { toNuxtError, formatBytes, formatIsoDate, workImageUrl } from '@/lib/util'
+import { WORK_IMAGE_SHOWORIGINAL_MAX_BYTES } from '@shared/const'
 
 const route = useRoute()
 const router = useRouter()
@@ -95,9 +96,9 @@ const workLargeImageUrl = computed(() => {
   if (!work.value) return ''
   return workImageUrl(runtimeConfig.public.imgBase, work.value.workId, 'large', work.value.updatedAt)
 })
-const isUnder1MB = computed(() => {
+const isOriginalLight = computed(() => {
   if (!work.value) return false
-  return work.value.bytes <= 1024 * 1024
+  return work.value.bytes <= WORK_IMAGE_SHOWORIGINAL_MAX_BYTES
 })
 
 const openOriginalImage = () => {

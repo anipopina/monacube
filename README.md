@@ -67,7 +67,7 @@ uploads/
 
 ### Delivery
 
-- original が 1MB 未満ならアートワーク詳細で original を表示 / 1MB以上なら large.webp を表示
+- original が一定サイズ以下ならアートワーク詳細で original を表示 / 一定サイズ以上なら large.webp を表示
 - blurHash, thumbBHash でロード時間をつなぐ
 
 ## Other Definition Files
@@ -87,3 +87,4 @@ uploads/
 - アートワーク編集機能
 - プロフィール編集機能+アイコンアップロード
 - Adminアカウントの定義と専用UI追加
+- 作品ごとにOGP設定

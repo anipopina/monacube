@@ -86,6 +86,10 @@ select {
   }
 }
 
+textarea {
+  resize: vertical;
+}
+
 // type="number" の数値操作ボタンを無効化  Chrome, Edge, Safari
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button {
@@ -278,6 +282,14 @@ li {
     vertical-align: -0.05em;
     margin-inline-end: 0.2em;
   }
+}
+
+.gc-danger {
+  color: var(--color-danger);
+}
+
+.gc-warning {
+  color: var(--color-warning);
 }
 
 .gc-works-grid {

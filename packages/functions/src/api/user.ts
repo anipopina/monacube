@@ -7,6 +7,8 @@ import { apiHandler, HttpError, mustGetEnv, responseJson } from '../lib/util'
 import type { GetUserOk } from '@shared/apiInterface'
 import type { UserRecord, UserStatsRecord, WorkRecord } from '@shared/ddbRecord'
 
+const WORKS_LIMIT = 50
+
 export const handler = apiHandler(async (event) => {
   const table = mustGetEnv('APP_TABLE')
   const includeUserStats = event.queryStringParameters?.includeUserStats === 'true'
@@ -29,6 +31,7 @@ export const handler = apiHandler(async (event) => {
         KeyConditionExpression: 'GSI1PK = :gsi1pk AND begins_with(GSI1SK, :workPrefix)',
         ScanIndexForward: false,
         FilterExpression: '#status = :ok',
+        Limit: WORKS_LIMIT,
         ExpressionAttributeNames: {
           '#status': 'status',
         },

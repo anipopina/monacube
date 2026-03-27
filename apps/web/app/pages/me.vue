@@ -137,6 +137,7 @@ const bytesUsedPercent = computed(() => {
 const { data, error, refresh } = await useAsyncData(
   () => `me-${meUserId.value}`,
   async () => {
+    if (!meUserId.value) return null // ログアウト時のundefinedアクセスを防止
     const data = await api.getUser(meUserId.value, { includeUserStats: true })
     updateUserRecords({
       userRecord: data.user,

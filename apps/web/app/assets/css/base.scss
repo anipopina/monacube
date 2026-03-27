@@ -14,6 +14,9 @@ html,
 body,
 #__nuxt {
   height: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 body {
@@ -194,10 +197,45 @@ li {
 }
 
 .gc-page-container {
+  flex: 1;
   width: 100%;
   max-width: var(--pagewidth-max);
   padding: 0 var(--space-3) var(--space-6) var(--space-3);
   margin-inline: auto;
+}
+
+.gc-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--color-border);
+  background: linear-gradient(180deg, rgb(from var(--color-surface) r g b / 0.6), rgb(from var(--color-bg) r g b / 0.95)), var(--color-bg);
+
+  &__inner {
+    width: 100%;
+    max-width: var(--pagewidth-max);
+    margin-inline: auto;
+    padding: var(--space-5) var(--space-5);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+
+  &__brand {
+    color: var(--color-muted);
+    font-size: var(--font-size-sm);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  &__nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    align-items: center;
+    justify-content: flex-end;
+    color: var(--color-muted);
+    font-size: var(--font-size-sm);
+  }
 }
 
 .gc-page-title {
@@ -282,6 +320,10 @@ li {
     vertical-align: -0.05em;
     margin-inline-end: 0.2em;
   }
+}
+
+.gc-muted {
+  color: var(--color-muted);
 }
 
 .gc-danger {

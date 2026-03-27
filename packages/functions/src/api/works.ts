@@ -7,8 +7,12 @@ import { apiHandler, HttpError, mustGetEnv, responseJson } from '../lib/util'
 import type { GetWorksOk, GetWorksReqQuery } from '@shared/apiInterface'
 import type { WorkRecord } from '@shared/ddbRecord'
 
-const DEFAULT_LIMIT = 20
+const DEFAULT_LIMIT = 50
 const MAX_LIMIT = 50
+
+// Lambda memory cache
+const RESPONSE_CACHE_TTL_MS = 30_000
+const worksResponseCache = new Map<string, { expiresAt: number; value: GetWorksOk }>()
 
 export const handler = apiHandler(async (event) => {
   const table = mustGetEnv('APP_TABLE')
@@ -16,6 +20,16 @@ export const handler = apiHandler(async (event) => {
   const query: GetWorksReqQuery = {
     limit: parseLimit(event.queryStringParameters?.limit),
     lastEvaluatedKey: normalizePageToken(event.queryStringParameters?.lastEvaluatedKey),
+  }
+
+  const cacheKey = JSON.stringify(query)
+  const cached = worksResponseCache.get(cacheKey)
+  const now = Date.now()
+  if (cached && cached.expiresAt > now) {
+    return responseJson(200, cached.value)
+  }
+  if (cached && cached.expiresAt <= now) {
+    worksResponseCache.delete(cacheKey)
   }
 
   const ddbRes = await ddb.send(
@@ -46,6 +60,11 @@ export const handler = apiHandler(async (event) => {
     works,
     lastEvaluatedKey: stringifyPageToken(ddbRes.LastEvaluatedKey),
   }
+
+  worksResponseCache.set(cacheKey, {
+    value: response,
+    expiresAt: now + RESPONSE_CACHE_TTL_MS,
+  })
 
   return responseJson(200, response)
 })

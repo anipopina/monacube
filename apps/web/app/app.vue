@@ -1,15 +1,12 @@
 <template>
   <NuxtLoadingIndicator color="linear-gradient(90deg, #53989cff, #53989c44)" :height="4" />
+
   <UiHeader>
     <template #logo>
       <h1 class="gc-span-nized"><NuxtLink to="/">MonaCube</NuxtLink></h1>
     </template>
 
     <template #nav>
-      <NuxtLink to="/users/M8KAtuA3xWGLhsjim81uPv1uBQMyatJMW5" class="gc-only-desktop">User1</NuxtLink>
-      <NuxtLink to="/users/MET11NjMLWS6qrf6bV4gscWW2B1WSV4QVp" class="gc-only-desktop">User2</NuxtLink>
-      <NuxtLink to="/terms" class="gc-only-desktop">Terms</NuxtLink>
-      <NuxtLink to="/privacy" class="gc-only-desktop">Privacy</NuxtLink>
       <NuxtLink to="/about" class="gc-only-desktop">About</NuxtLink>
       <NuxtLink to="/settings" class="gc-only-desktop">
         <Settings class="gc-icon" aria-label="Settings" />
@@ -23,9 +20,7 @@
       <UiButton v-if="!user" @click="managedLogin" :disabled="isLoading" variant="primary" :iconRight="KeyRound">Login</UiButton>
 
       <UiHamburger class="gc-only-mobile">
-        <NuxtLink to="/">Home</NuxtLink>
-        <NuxtLink to="/terms">Terms</NuxtLink>
-        <NuxtLink to="/privacy">Privacy</NuxtLink>
+        <NuxtLink to="/">Top</NuxtLink>
         <NuxtLink to="/about">About</NuxtLink>
         <NuxtLink to="/settings"><Settings class="gc-icon gc-icon--small" aria-label="Settings" /></NuxtLink>
         <span><!-- spacer --></span>
@@ -34,9 +29,22 @@
       </UiHamburger>
     </template>
   </UiHeader>
+
   <div class="gc-page-container">
     <NuxtPage />
   </div>
+
+  <footer class="gc-footer">
+    <div class="gc-footer__inner">
+      <NuxtLink to="/" class="gc-footer__brand">MonaCube</NuxtLink>
+      <nav class="gc-footer__nav" aria-label="Footer">
+        <NuxtLink to="/about">About</NuxtLink>
+        <NuxtLink to="/terms">Terms</NuxtLink>
+        <NuxtLink to="/privacy">Privacy</NuxtLink>
+      </nav>
+    </div>
+  </footer>
+
   <UiWalletModal ref="walletModalRef" />
   <UiLegalAcceptModal ref="legalAcceptModalRef" />
   <UiConfirm />

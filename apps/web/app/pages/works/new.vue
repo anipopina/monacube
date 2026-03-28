@@ -3,11 +3,30 @@
     <h2 class="gc-page-title"><ImagePlus class="gc-icon gc-icon--title" /> New Artwork</h2>
     <section class="gc-section-noframe lc-upload-section">
       <form class="lc-upload-form" @submit.prevent="submitArtwork">
-        <label class="lc-field">
+        <div class="lc-field">
           <span class="lc-field-label">Image *</span>
-          <input ref="fileInput" type="file" accept="image/jpeg,image/png,image/webp" :disabled="isLoading" @change="onChangeFile" />
+          <div
+            class="lc-dropzone"
+            :class="{ 'is-dragover': isDragOver, 'is-disabled': isLoading }"
+            @click.stop="openFileDialog"
+            @dragenter.prevent="onDragEnter"
+            @dragover.prevent="onDragOver"
+            @dragleave.prevent="onDragLeave"
+            @drop.prevent="onDropFile"
+          >
+            <p class="lc-dropzone-title">Drag & Drop image here</p>
+            <p class="lc-dropzone-sub">or click to select file</p>
+            <input
+              ref="fileInput"
+              class="lc-file-input"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              :disabled="isLoading"
+              @change="onChangeFile"
+            />
+          </div>
           <small class="lc-field-help"> JPEG / PNG / WEBP, max {{ WORK_IMAGE_MAX_BYTES / (1024 * 1024) }} MB </small>
-        </label>
+        </div>
 
         <div v-if="previewUrl" class="lc-preview-wrap">
           <img :src="previewUrl" alt="Selected image preview" class="lc-preview" />
@@ -77,6 +96,8 @@ const selectedFile = ref<File | null>(null)
 const previewUrl = ref('')
 const title = ref('')
 const description = ref('')
+const isDragOver = ref(false)
+const dragDepth = ref(0)
 
 const isActionLoading = ref(false)
 const isLoading = computed(() => isAuthLoading.value || isActionLoading.value)
@@ -105,6 +126,54 @@ const getImageResolution = (file: File): Promise<{ width: number; height: number
   })
 }
 
+const openFileDialog = () => {
+  if (isLoading.value) return
+  fileInput.value?.click()
+}
+
+const selectFile = async (file: File, targetToReset?: HTMLInputElement | null): Promise<boolean> => {
+  const clearSelection = () => {
+    if (targetToReset) targetToReset.value = ''
+    selectedFile.value = null
+    clearPreview()
+  }
+
+  if (!WORK_IMAGE_ALLOWEDCONTENTTYPES.includes(file.type.toLowerCase())) {
+    toast.error('対応していない画像形式です')
+    clearSelection()
+    return false
+  }
+
+  if (file.size <= 0 || file.size > WORK_IMAGE_MAX_BYTES) {
+    toast.error(`画像サイズが不正です（最大 ${Math.floor(WORK_IMAGE_MAX_BYTES / (1024 * 1024))}MB）`)
+    clearSelection()
+    return false
+  }
+
+  try {
+    const { width, height } = await getImageResolution(file)
+    if (width < WORK_IMAGE_MIN_WIDTH || height < WORK_IMAGE_MIN_HEIGHT) {
+      toast.error(`画像解像度が不正です（最小 ${WORK_IMAGE_MIN_WIDTH} x ${WORK_IMAGE_MIN_HEIGHT}px）`)
+      clearSelection()
+      return false
+    }
+    if (width > WORK_IMAGE_MAX_WIDTH || height > WORK_IMAGE_MAX_HEIGHT) {
+      toast.error(`画像解像度が不正です（最大 ${WORK_IMAGE_MAX_WIDTH} x ${WORK_IMAGE_MAX_HEIGHT}px）`)
+      clearSelection()
+      return false
+    }
+  } catch {
+    toast.error('画像の読み込みに失敗しました')
+    clearSelection()
+    return false
+  }
+
+  selectedFile.value = file
+  clearPreview()
+  previewUrl.value = URL.createObjectURL(file)
+  return true
+}
+
 const onChangeFile = async (event: Event) => {
   const target = event.target as HTMLInputElement | null
   const file = target?.files?.[0]
@@ -113,50 +182,37 @@ const onChangeFile = async (event: Event) => {
     clearPreview()
     return
   }
+  await selectFile(file, target)
+}
 
-  if (!WORK_IMAGE_ALLOWEDCONTENTTYPES.includes(file.type.toLowerCase())) {
-    toast.error('対応していない画像形式です')
-    target.value = ''
-    selectedFile.value = null
-    clearPreview()
-    return
+const onDragEnter = () => {
+  if (isLoading.value) return
+  dragDepth.value += 1
+  isDragOver.value = true
+}
+
+const onDragOver = () => {
+  if (isLoading.value) return
+  isDragOver.value = true
+}
+
+const onDragLeave = () => {
+  if (isLoading.value) return
+  dragDepth.value = Math.max(0, dragDepth.value - 1)
+  if (dragDepth.value === 0) {
+    isDragOver.value = false
   }
+}
 
-  if (file.size <= 0 || file.size > WORK_IMAGE_MAX_BYTES) {
-    toast.error(`画像サイズが不正です（最大 ${Math.floor(WORK_IMAGE_MAX_BYTES / (1024 * 1024))}MB）`)
-    target.value = ''
-    selectedFile.value = null
-    clearPreview()
-    return
-  }
+const onDropFile = async (event: DragEvent) => {
+  if (isLoading.value) return
+  dragDepth.value = 0
+  isDragOver.value = false
 
-  try {
-    const { width, height } = await getImageResolution(file)
-    if (width < WORK_IMAGE_MIN_WIDTH || height < WORK_IMAGE_MIN_HEIGHT) {
-      toast.error(`画像解像度が不正です（最小 ${WORK_IMAGE_MIN_WIDTH} x ${WORK_IMAGE_MIN_HEIGHT}px）`)
-      target.value = ''
-      selectedFile.value = null
-      clearPreview()
-      return
-    }
-    if (width > WORK_IMAGE_MAX_WIDTH || height > WORK_IMAGE_MAX_HEIGHT) {
-      toast.error(`画像解像度が不正です（最大 ${WORK_IMAGE_MAX_WIDTH} x ${WORK_IMAGE_MAX_HEIGHT}px）`)
-      target.value = ''
-      selectedFile.value = null
-      clearPreview()
-      return
-    }
-  } catch {
-    toast.error('画像の読み込みに失敗しました')
-    target.value = ''
-    selectedFile.value = null
-    clearPreview()
-    return
-  }
+  const file = event.dataTransfer?.files?.[0]
+  if (!file) return
 
-  selectedFile.value = file
-  clearPreview()
-  previewUrl.value = URL.createObjectURL(file)
+  await selectFile(file, fileInput.value)
 }
 
 const submitArtwork = async () => {
@@ -266,6 +322,48 @@ watch(
 
 .lc-field-help {
   color: var(--color-muted);
+}
+
+.lc-dropzone {
+  border: 3px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  min-height: 132px;
+  display: grid;
+  place-content: center;
+  gap: var(--space-1);
+  text-align: center;
+  padding: var(--space-4);
+  cursor: pointer;
+}
+
+.lc-dropzone.is-dragover {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
+}
+
+.lc-dropzone.is-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.lc-dropzone-title {
+  margin: 0;
+  font-weight: var(--font-weight-medium);
+}
+
+.lc-dropzone-sub {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-muted);
+}
+
+.lc-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .lc-preview-wrap {

@@ -62,6 +62,8 @@ import {
   WORK_IMAGE_MAX_HEIGHT,
   WORK_IMAGE_MAX_WIDTH,
   WORK_TITLE_MAX_LENGTH,
+  WORK_IMAGE_MIN_WIDTH,
+  WORK_IMAGE_MIN_HEIGHT,
   WORK_IMAGE_SHOWORIGINAL_MAX_BYTES,
 } from '@shared/const'
 
@@ -130,7 +132,14 @@ const onChangeFile = async (event: Event) => {
 
   try {
     const { width, height } = await getImageResolution(file)
-    if (width <= 0 || height <= 0 || width > WORK_IMAGE_MAX_WIDTH || height > WORK_IMAGE_MAX_HEIGHT) {
+    if (width < WORK_IMAGE_MIN_WIDTH || height < WORK_IMAGE_MIN_HEIGHT) {
+      toast.error(`画像解像度が不正です（最小 ${WORK_IMAGE_MIN_WIDTH} x ${WORK_IMAGE_MIN_HEIGHT}px）`)
+      target.value = ''
+      selectedFile.value = null
+      clearPreview()
+      return
+    }
+    if (width > WORK_IMAGE_MAX_WIDTH || height > WORK_IMAGE_MAX_HEIGHT) {
       toast.error(`画像解像度が不正です（最大 ${WORK_IMAGE_MAX_WIDTH} x ${WORK_IMAGE_MAX_HEIGHT}px）`)
       target.value = ''
       selectedFile.value = null

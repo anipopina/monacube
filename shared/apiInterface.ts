@@ -7,6 +7,8 @@ export type Iso8601String = string
 export type ContentType = string
 export type Ulid = string
 export type Hex = string
+export type Base64 = string
+export type Base64Url = string
 export type MonaAddress = string
 export type UnixTimestamp = number
 
@@ -30,7 +32,7 @@ export type AuthVerifyReqBody = {
   address: MonaAddress
   nonce: Hex
   message: string
-  signature: string
+  signature: Base64
 }
 export type AuthVerifyOk = {
   accessToken: string
@@ -43,11 +45,11 @@ export type AuthVerifyOk = {
 // GET /works
 export type GetWorksOk = {
   works: WorkRecord[]
-  lastEvaluatedKey?: string // for pagination; if present, there are more items to fetch
+  lastEvaluatedKey?: Base64Url // for pagination; if present, there are more items to fetch
 }
 export type GetWorksReqQuery = {
   limit?: number
-  lastEvaluatedKey?: string
+  lastEvaluatedKey?: Base64Url
 }
 
 // GET /works/{workId}
@@ -108,7 +110,7 @@ export type MeLegalAcceptReqBody = {
   termsVersion: string
   privacyVersion: string
   signedAt: Iso8601String
-  signature: string
+  signature: Base64
 }
 export type MeLegalAcceptOk = {
   userStats: UserStatsRecord

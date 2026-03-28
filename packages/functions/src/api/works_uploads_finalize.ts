@@ -10,8 +10,10 @@ import type { WorksUploadsFinalizeOk, WorksUploadsFinalizeReqBody } from '@share
 import type { UploadRecord, WorkRecord } from '@shared/ddbRecord'
 import {
   WORK_DESCRIPTION_MAX_LENGTH,
-  WORK_IMAGE_MAX_HEIGHT,
   WORK_IMAGE_MAX_WIDTH,
+  WORK_IMAGE_MAX_HEIGHT,
+  WORK_IMAGE_MIN_WIDTH,
+  WORK_IMAGE_MIN_HEIGHT,
   WORK_TITLE_MAX_LENGTH,
   workId2imageKey,
 } from '@shared/const'
@@ -72,6 +74,8 @@ export const handler = privateApiHandler(async (event, auth) => {
       source: uploadedObject,
       maxWidth: WORK_IMAGE_MAX_WIDTH,
       maxHeight: WORK_IMAGE_MAX_HEIGHT,
+      minWidth: WORK_IMAGE_MIN_WIDTH,
+      minHeight: WORK_IMAGE_MIN_HEIGHT,
     })
   } catch (error) {
     if (error instanceof ImageProcessError) throw new HttpError(400, { error: error.code })

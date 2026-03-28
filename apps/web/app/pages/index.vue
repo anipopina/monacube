@@ -21,11 +21,7 @@
     </section>
 
     <section class="lc-section-artworks">
-      <div v-if="works" class="gc-works-grid">
-        <NuxtLink v-for="work in works" :key="work.workId" :to="`/works/${work.workId}`" class="gc-work-tile" :title="work.title">
-          <img :src="toThumbUrl(work.workId, work.updatedAt)" :alt="work.title" loading="lazy" />
-        </NuxtLink>
-      </div>
+      <UiWorksGrid v-if="works" :works="works" />
 
       <div v-else class="gc-works-loading"><UiLoadingOverlay :show="!works" /></div>
     </section>
@@ -34,11 +30,10 @@
 
 <script setup lang="ts">
 import { Box, KeyRound } from 'lucide-vue-next'
-import { toNuxtError, workImageUrl } from '@/lib/util'
+import { toNuxtError } from '@/lib/util'
 import { managedCreatePasskeyKey, managedLoginKey } from '@/lib/injectionKeys'
 
 const api = useApi()
-const runtimeConfig = useRuntimeConfig()
 const { user, isNew, isLoading: isAuthLoading } = useWalletAuth()
 
 const managedCreatePasskey = inject(managedCreatePasskeyKey)
@@ -52,10 +47,6 @@ const { data, error } = useAsyncData('works-home', async () => {
 })
 
 const works = computed(() => data.value?.works ?? null)
-
-const toThumbUrl = (workId: string, cacheBuster: string): string => {
-  return workImageUrl(runtimeConfig.public.imgBase, workId, 'thumb', cacheBuster)
-}
 
 watch(
   error,

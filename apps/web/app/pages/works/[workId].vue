@@ -2,10 +2,29 @@
   <div>
     <section v-if="work" class="gc-section-noframe">
       <div class="lc-media-wrap">
-        <picture>
-          <source v-if="workLargeImageUrl && !isOriginalLight" :srcset="workLargeImageUrl" type="image/webp" />
-          <img class="lc-image" :src="workOriginalImageUrl" :alt="work.title" loading="eager" />
-        </picture>
+        <div class="lc-image-stack">
+          <img
+            v-if="workPlaceholderDataUrl"
+            class="lc-image lc-image--placeholder"
+            :class="{ 'is-loaded': isMainImageLoaded }"
+            :src="workPlaceholderDataUrl"
+            alt=""
+            aria-hidden="true"
+          />
+          <picture>
+            <source v-if="workLargeImageUrl && !isOriginalLight" :srcset="workLargeImageUrl" type="image/webp" />
+            <img
+              class="lc-image lc-image--main"
+              :class="{ 'is-loaded': isMainImageLoaded }"
+              :src="workOriginalImageUrl"
+              :width="work.width"
+              :height="work.height"
+              :alt="work.title"
+              loading="eager"
+              @load="onMainImageLoad"
+            />
+          </picture>
+        </div>
       </div>
     </section>
 
@@ -69,8 +88,10 @@ const { confirm } = useConfirm()
 const toast = useToast()
 const api = useApi()
 const runtimeConfig = useRuntimeConfig()
+const { thumbHashBase64ToDataUrl } = useBlurHash()
 const { user: authUser } = useWalletAuth()
 const workId = computed(() => String(route.params.workId || '').trim())
+const isMainImageLoaded = ref(false)
 
 const { data, error } = await useAsyncData(
   () => `work-${workId.value}`,
@@ -100,6 +121,15 @@ const isOriginalLight = computed(() => {
   if (!work.value) return false
   return work.value.bytes <= WORK_IMAGE_SHOWORIGINAL_MAX_BYTES
 })
+const workPlaceholderDataUrl = computed(() => {
+  const blurHash = work.value?.blurHash?.trim()
+  if (!blurHash) return ''
+  return thumbHashBase64ToDataUrl(blurHash)
+})
+
+const onMainImageLoad = () => {
+  isMainImageLoaded.value = true
+}
 
 const openOriginalImage = () => {
   if (!workOriginalImageUrl.value) return
@@ -122,6 +152,14 @@ watch(
   error,
   (value) => {
     if (value) showError(toNuxtError(value, { 0: 'Failed to load artwork detail', 404: 'Artwork not found' }))
+  },
+  { immediate: true },
+)
+
+watch(
+  workOriginalImageUrl,
+  () => {
+    isMainImageLoaded.value = false
   },
   { immediate: true },
 )
@@ -150,10 +188,33 @@ watch(
   padding: var(--space-6) 0;
 }
 
+.lc-image-stack {
+  position: relative;
+}
+
 .lc-image {
   max-width: 100%;
   height: auto;
+}
+
+.lc-image--placeholder {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+.lc-image--main {
+  position: relative;
   object-fit: contain;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+
+  &.is-loaded {
+    opacity: 1;
+  }
 }
 
 .lc-title {

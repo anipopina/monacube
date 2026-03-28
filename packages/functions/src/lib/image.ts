@@ -29,7 +29,13 @@ export class ImageProcessError extends Error {
   }
 }
 
-export async function processWorkImage(params: { source: Buffer; maxWidth: number; maxHeight: number }): Promise<ProcessedWorkImage> {
+export async function processWorkImage(params: {
+  source: Buffer
+  maxWidth: number
+  maxHeight: number
+  minWidth: number
+  minHeight: number
+}): Promise<ProcessedWorkImage> {
   const metadata = await sharp(params.source, { failOn: 'error' }).metadata()
   const width = metadata.width ?? 0
   const height = metadata.height ?? 0
@@ -39,6 +45,9 @@ export async function processWorkImage(params: { source: Buffer; maxWidth: numbe
   }
   if (width > params.maxWidth || height > params.maxHeight) {
     throw new ImageProcessError('image_dimensions_too_large', 'Image dimensions exceed max limit')
+  }
+  if (width < params.minWidth || height < params.minHeight) {
+    throw new ImageProcessError('image_dimensions_too_small', 'Image dimensions are below min limit')
   }
 
   const normalizeDecision = decideNormalizeOriginal(metadata)

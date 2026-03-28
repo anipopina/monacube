@@ -3,6 +3,8 @@ export const WORK_DESCRIPTION_MAX_LENGTH = 1000
 export const WORK_IMAGE_MAX_BYTES = 20 * 1024 * 1024
 export const WORK_IMAGE_MAX_WIDTH = 6000
 export const WORK_IMAGE_MAX_HEIGHT = 6000
+export const WORK_IMAGE_MIN_WIDTH = 200
+export const WORK_IMAGE_MIN_HEIGHT = 200
 export const WORK_IMAGE_ALLOWEDCONTENTTYPES = ['image/jpeg', 'image/png', 'image/webp'] // includes()の型エラーが面倒なので as const は使用しない
 export const WORK_IMAGE_SHOWORIGINAL_MAX_BYTES = 2 * 1024 * 1024
 

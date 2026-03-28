@@ -19,11 +19,7 @@
         <p v-if="userWorks" class="lc-count">{{ userWorks.length }} works</p>
       </div>
 
-      <div v-if="userWorks?.length" class="gc-works-grid">
-        <NuxtLink v-for="work in userWorks" :key="work.workId" :to="`/works/${work.workId}`" class="gc-work-tile" :title="work.title">
-          <img :src="toThumbUrl(work.workId, work.updatedAt)" :alt="work.title" loading="lazy" />
-        </NuxtLink>
-      </div>
+      <UiWorksGrid v-if="userWorks?.length" :works="userWorks" />
 
       <p v-else class="lc-empty">投稿作品はまだありません。</p>
     </section>
@@ -32,7 +28,7 @@
 
 <script setup lang="ts">
 import { User } from 'lucide-vue-next'
-import { toNuxtError, workImageUrl } from '@/lib/util'
+import { toNuxtError } from '@/lib/util'
 import { validateAddress } from '@/lib/monawallet'
 
 const route = useRoute()
@@ -57,10 +53,6 @@ const userIconUrl = computed(() => {
   if (!userRecord.value?.iconKey) return ''
   return `${runtimeConfig.public.imgBase}/${userRecord.value.iconKey}?cb=${userRecord.value.updatedAt}`
 })
-
-const toThumbUrl = (workId: string, cacheBuster: string): string => {
-  return workImageUrl(runtimeConfig.public.imgBase, workId, 'thumb', cacheBuster)
-}
 
 watch(
   error,

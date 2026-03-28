@@ -21,6 +21,7 @@ export type Iso8601String = string
 export type ContentType = string
 export type Ulid = string
 export type Hex = string
+export type Base64 = string
 export type MonaAddress = string
 export type UnixTimestamp = number
 
@@ -76,8 +77,8 @@ export type WorkRecord = DdbBaseRecord<'WORK', WorkPk, 'META'> & {
   bytes: number
   uploadCType: ContentType // contentType of uploaded image
   normalized: boolean // whether the original image has been normalized (EXIF removed, color profile converted)
-  blurHash: string
-  thumbBHash: string
+  blurHash: Base64
+  thumbBHash: Base64
 
   GSI1PK: UserPk // GSI for querying works by user
   GSI1SK: `WORK#${Iso8601String}#${Ulid}` // format: WORK#<createdAt>#<workId>
@@ -134,7 +135,7 @@ export type LegalAcceptanceRecord = DdbBaseRecord<'LEGAL_ACCEPTANCE', UserPk, `L
   privacyVersion: string
   acceptedAt: Iso8601String
   signedMessage: string
-  signature: string
+  signature: Base64
 }
 
 export type AppTableRecord = UserRecord | UserStatsRecord | WorkRecord | TipRecord | NonceRecord | UploadRecord | LegalAcceptanceRecord

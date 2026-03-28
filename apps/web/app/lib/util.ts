@@ -99,3 +99,20 @@ const normalizeStatus = (value: unknown): number | undefined => {
   const n = typeof value === 'number' ? value : Number(value)
   return Number.isInteger(n) && n >= 400 && n <= 599 ? n : undefined
 }
+
+export const base64ToBytes = (base64: string): Uint8Array => {
+  if (typeof globalThis.atob === 'function') {
+    const binary = globalThis.atob(base64)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i)
+    }
+    return bytes
+  }
+
+  if (typeof Buffer !== 'undefined') {
+    return Uint8Array.from(Buffer.from(base64, 'base64'))
+  }
+
+  throw new Error('No base64 decoder available')
+}

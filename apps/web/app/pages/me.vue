@@ -67,16 +67,15 @@
         <p v-if="userWorks" class="lc-count">{{ usedCount }} works</p>
       </div>
 
-      <div v-if="userWorks" class="gc-works-grid">
-        <a href="/works/new" class="gc-work-tile" title="Upload new artwork" @click.prevent="onClickNewWork">
-          <span class="lc-new-work-inner">
-            <Plus class="lc-new-work-icon" />
-          </span>
-        </a>
-        <NuxtLink v-for="work in userWorks" :key="work.workId" :to="`/works/${work.workId}`" class="gc-work-tile" :title="work.title">
-          <img :src="toThumbUrl(work.workId, work.updatedAt)" :alt="work.title" loading="lazy" />
-        </NuxtLink>
-      </div>
+      <UiWorksGrid v-if="userWorks" :works="userWorks">
+        <template #prepend>
+          <a href="/works/new" class="gc-work-tile" title="Upload new artwork" @click.prevent="onClickNewWork">
+            <span class="lc-new-work-inner">
+              <Plus class="lc-new-work-icon" />
+            </span>
+          </a>
+        </template>
+      </UiWorksGrid>
 
       <div v-else class="gc-works-loading"><UiLoadingOverlay :show="!userWorks" /></div>
     </section>
@@ -87,7 +86,7 @@
 import { Birdhouse, Wallet, Plus, LogOut } from 'lucide-vue-next'
 import { getQuota, QUOTA_UNIT_SAT, QUOTA_UNIT_BYTES, QUOTA_UNIT_COUNTS } from '@shared/const'
 import { openWalletModalKey, managedLogoutKey } from '@/lib/injectionKeys'
-import { toNuxtError, workImageUrl, formatBalanceSat, formatBytes } from '@/lib/util'
+import { toNuxtError, formatBalanceSat, formatBytes } from '@/lib/util'
 
 const BALANCE_REFRESH_ADVICE =
   '残高の更新はあんまりリアルタイムではないため、ブロックチェーンでの承認をゆっくりと待った後で更新ボタンを押してください。'
@@ -149,10 +148,6 @@ const { data, error, refresh } = await useAsyncData(
 )
 
 const userWorks = computed(() => data.value?.userWorks ?? null)
-
-const toThumbUrl = (workId: string, cacheBuster: string): string => {
-  return workImageUrl(runtimeConfig.public.imgBase, workId, 'thumb', cacheBuster)
-}
 
 const onClickNewWork = () => {
   if (remainingQuotaCount.value <= 0 || remainingQuotaBytes.value <= 0) {

@@ -10,18 +10,20 @@
       <h3 class="gc-section-title">Key Features</h3>
       <ul>
         <li class="lc-feature-topli">
-          Passkey ウォレットによるログイン
+          Passkey ウォレットによる認証とチップ
           <ul>
             <li>パスワード不要で安全・簡単にログインできます。</li>
-            <li>Passkey から生成したノンカストディアルウォレットを提供します。</li>
+            <li>Passkey から生成したノンカストディアルなモナコインウォレットを提供します。</li>
+            <li>モナコインを使うので、クレジットカード会社の顔色などは一切窺う必要がありません。</li>
+            <li>セルフカストディなので、運営者の信頼性や許認可を気にしなくても安心して利用できます。</li>
           </ul>
         </li>
         <li class="lc-feature-topli">
           モナコイン残高による投稿クォータ解放
           <ul>
             <li>保有しているモナコインの量に応じて投稿可能な容量が増加します。</li>
-            <li>チップを通じて金銭以外の面でもクリエイターを支援できます。</li>
-            <li>不正な投稿・工作を抑制して、快適なプラットフォームを維持します。</li>
+            <li>チップを通じて金銭とクォータの両面でクリエイターを応援できます。</li>
+            <li>不正な投稿や工作を抑制して、快適なプラットフォームを維持します。</li>
           </ul>
         </li>
       </ul>
@@ -30,7 +32,7 @@
     <section class="gc-section-surfaced">
       <h3 class="gc-section-title">About this project</h3>
       <p>MonaCube は個人が開発・運営しています。</p>
-      <p>Monacoin の文化やコミュニティとの相性を意識しながら、 シンプルで持続可能なプラットフォームを目指しています。</p>
+      <p>Monacoin の文化やコミュニティとの相性を意識しながら、 自由でシンプルで持続可能なプラットフォームを目指しています。</p>
     </section>
 
     <section class="gc-section-surfaced">
@@ -55,6 +57,7 @@
               <a href="https://monapa.electrum-mona.org/" target="_blank" rel="noopener noreferrer">
                 monapa.electrum-mona.org <ExternalLink class="gc-icon" />
               </a>
+              <div class="lc-extservices-note">脇山珠美ちゃんかわいい！ (特有のクレジット表記)</div>
             </li>
             <li>
               <a href="https://wallet.monaparty.me/" target="_blank" rel="noopener noreferrer">

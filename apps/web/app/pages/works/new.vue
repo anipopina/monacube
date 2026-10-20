@@ -378,7 +378,6 @@ watch(
 .lc-preview {
   max-height: 320px;
   width: auto;
-  border-radius: var(--radius-sm);
 }
 
 .lc-notes {

@@ -54,10 +54,7 @@ export const privacyV0_1: LegalDocument = {
         },
         {
           type: 'list',
-          items: [
-            'AWS（インフラおよびストレージ）',
-            // 将来: 'Google Analytics', 'Sentry' など追加
-          ],
+          items: ['AWS（インフラおよびストレージ）', '各種モナコイン関連サービス（ブロックチェーン情報へのアクセス）'],
         },
       ],
     },
